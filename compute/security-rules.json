@@ -1,0 +1,6 @@
+{
+    "rule_list": "block_rule1,block_rule2,rate_limit_rule",
+    "block_rule1": "{\"enabled\":true,\"conditions\":{\"operator\":\"and\",\"rules\":[{\"type\":\"path\",\"operator\":\"startswith\",\"value\":\"/product\"}]},\"action\":{\"type\":\"block\",\"response_code\":403,\"response_message\":\"Access to /product is blocked\"}}",
+    "block_rule2": "{\"enabled\":true,\"conditions\":{\"operator\":\"and\",\"rules\":[{\"type\":\"path\",\"operator\":\"startswith\",\"value\":\"/product\"}]},\"action\":{\"type\":\"block\",\"response_code\":403,\"response_message\":\"Access to /product is blocked\"}}",
+    "rate_limit_rule": "{\"enabled\":true,\"conditions\":{\"operator\":\"and\",\"rules\":[{\"type\":\"ratelimit\",\"window\":\"10s\",\"max_requests\":5,\"block_ttl\":1}]},\"action\":{\"type\":\"block\",\"response_code\":429,\"response_message\":\"Too Many Requests\"}}"
+}
