@@ -82,6 +82,36 @@ body {
   border-bottom: var(--border-width-sm) solid var(--border-primary);
 }
 
+.vce-sidebar-tabs {
+  display: flex;
+  border-bottom: var(--border-width-sm) solid var(--border-primary);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.vce-sidebar-tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-practical);
+}
+
+.vce-sidebar-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.vce-sidebar-tab[data-active="true"] {
+  color: var(--color-action);
+  border-bottom-color: var(--color-action);
+}
+
 .vce-sidebar-content {
   flex: 1;
   overflow-y: auto;
@@ -432,6 +462,18 @@ body {
 
 .vce-progress-fill[data-complete="true"] {
   background: var(--color-success);
+}
+
+.vce-progress-fill[data-warning="true"] {
+  background: var(--color-warning);
+}
+
+.vce-progress-fill[data-error="true"] {
+  background: var(--color-error);
+}
+
+.vce-btn-full-width {
+  width: 100%;
 }
 
 /* VCE Utility Classes */

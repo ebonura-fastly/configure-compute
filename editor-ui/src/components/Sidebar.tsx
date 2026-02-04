@@ -1,5 +1,17 @@
 import { useState, useCallback } from 'react'
 import type { Node, Edge } from '@xyflow/react'
+import {
+  Button,
+  Box,
+  Flex,
+  Text,
+  TextInput,
+  Select,
+  Alert,
+  Pill,
+  LoadingIndicator,
+} from '@fastly/beacon'
+import type { SelectOptionType } from '@fastly/beacon'
 import { allTemplates, templatesByCategory, instantiateTemplate, type RuleTemplate } from '../templates'
 
 type SidebarProps = {
@@ -139,15 +151,15 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarPro
   ]
 
   return (
-    <div className="vce-sidebar">
+    <aside className="vce-sidebar">
       {/* Tab Bar */}
-      <div className="tabs">
+      <div className="vce-sidebar-tabs">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="tab"
+            className="vce-sidebar-tab"
             data-active={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
           </button>
@@ -184,7 +196,7 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarPro
           />
         )}
       </div>
-    </div>
+    </aside>
   )
 }
 
@@ -204,27 +216,32 @@ function ComponentsTab({
   onDragStart: (event: React.DragEvent, nodeType: string) => void
 }) {
   return (
-    <div className="vce-components-tab">
-      <div className="vce-node-list">
+    <Box>
+      <Box className="vce-node-list">
         {nodeTypes.map(({ type, label, category, description }) => (
-          <div
+          <Box
             key={type}
             draggable
             onDragStart={(e) => onDragStart(e, type)}
             className="vce-node-item"
             data-category={category}
+            padding="sm"
+            marginBottom="xs"
+            style={{ cursor: 'grab', border: '1px solid var(--color-border)', borderRadius: '6px' }}
           >
-            <span className="vce-node-item-tag" data-category={category}>
-              {label}
-            </span>
-            <span className="vce-node-item-description">{description}</span>
-          </div>
+            <Flex style={{ alignItems: 'center', gap: '8px' }}>
+              <Pill size="sm" className="vce-node-item-tag" data-category={category}>
+                {label}
+              </Pill>
+              <Text size="xs" color="muted">{description}</Text>
+            </Flex>
+          </Box>
         ))}
-      </div>
-      <div className="vce-sidebar-hint">
+      </Box>
+      <Text size="xs" color="muted" style={{ textAlign: 'center', marginTop: '12px' }}>
         Drag components onto the canvas
-      </div>
-    </div>
+      </Text>
+    </Box>
   )
 }
 
@@ -245,62 +262,67 @@ function TemplatesTab({
   onAddTemplate: (template: RuleTemplate) => void
 }) {
   return (
-    <div className="vce-templates-tab">
+    <Box>
       {/* Search */}
-      <input
-        type="text"
-        placeholder="Search templates..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value)
-          setSelectedCategory(null)
-        }}
-        className="form-input vce-template-search"
-      />
+      <Box marginBottom="sm">
+        <TextInput
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value)
+            setSelectedCategory(null)
+          }}
+        />
+      </Box>
 
       {/* Category Tabs */}
-      <div className="vce-category-chips">
-        <button
+      <Flex style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        <Pill
           onClick={() => { setSelectedCategory(null); setSearchQuery('') }}
-          className="vce-chip"
-          data-active={selectedCategory === null && !searchQuery}
+          status={selectedCategory === null && !searchQuery ? 'info' : undefined}
+          style={{ cursor: 'pointer' }}
         >
           All
-        </button>
+        </Pill>
         {Object.entries(categoryLabels).map(([key, label]) => (
-          <button
+          <Pill
             key={key}
             onClick={() => { setSelectedCategory(key); setSearchQuery('') }}
-            className="vce-chip"
-            data-active={selectedCategory === key}
+            status={selectedCategory === key ? 'info' : undefined}
+            style={{ cursor: 'pointer' }}
           >
             {label}
-          </button>
+          </Pill>
         ))}
-      </div>
+      </Flex>
 
       {/* Templates List */}
-      <div className="vce-templates-list">
+      <Box className="vce-templates-list">
         {filteredTemplates.map((template) => (
-          <div
+          <Box
             key={template.id}
             className="vce-template-card"
             onClick={() => onAddTemplate(template)}
+            padding="sm"
+            marginBottom="sm"
+            style={{ cursor: 'pointer', border: '1px solid var(--color-border)', borderRadius: '6px' }}
           >
-            <div className="vce-template-name">{template.name}</div>
-            <p className="vce-template-description">{template.description}</p>
-            <div className="vce-template-tags">
+            <Text size="sm" style={{ fontWeight: 600 }}>{template.name}</Text>
+            <Text size="xs" color="muted" style={{ marginTop: '4px' }}>{template.description}</Text>
+            <Flex style={{ gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
               {template.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="vce-tag">{tag}</span>
+                <Pill key={tag} size="sm">{tag}</Pill>
               ))}
-            </div>
-          </div>
+            </Flex>
+          </Box>
         ))}
         {filteredTemplates.length === 0 && (
-          <div className="vce-empty-state">No templates found</div>
+          <Box padding="lg" style={{ textAlign: 'center' }}>
+            <Text color="muted">No templates found</Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
@@ -1629,312 +1651,268 @@ function FastlyTab({
   // If local mode is active, show local mode UI
   if (localMode && localServerAvailable) {
     return (
-      <div className="vce-fastly-content">
+      <Box padding="md">
         {/* Local Mode Banner */}
-        <div className="alert alert--local vce-mb-3">
-          <span>Local Dev Mode</span>
-          <button
-            onClick={() => {
-              updateLocalModeState({ localMode: false, localServerAvailable: false })
-            }}
-            className="btn btn--link"
-            data-size="sm"
+        <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <Pill status="info">Local Dev Mode</Pill>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => updateLocalModeState({ localMode: false, localServerAvailable: false })}
           >
             Switch to Fastly
-          </button>
-        </div>
+          </Button>
+        </Flex>
 
         {/* Local Compute Status */}
-        <label className="form-label">Local Compute Server</label>
-        <div className="card vce-mb-3">
-          <div className="card-header">
+        <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>Local Compute Server</Text>
+        <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <a
               href="http://127.0.0.1:7676/"
               target="_blank"
               rel="noopener noreferrer"
-              className="link code"
+              style={{ color: 'var(--color-link)', fontFamily: 'monospace', fontSize: '12px' }}
             >
               127.0.0.1:7676
             </a>
-            <button
-              onClick={handleRefreshLocal}
-              disabled={loading}
-              className="btn"
-              data-size="sm"
-              data-variant="ghost"
-            >
+            <Button variant="secondary" size="sm" onClick={handleRefreshLocal} disabled={loading}>
               {loading ? '...' : 'Refresh'}
-            </button>
-          </div>
+            </Button>
+          </Flex>
 
           {/* Status */}
-          <div className="vce-status-row vce-mb-2">
-            <span className="status-dot" data-status={localComputeRunning ? 'success' : 'error'} />
-            <span className="vce-text-sm">
+          <Flex style={{ alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Pill status={localComputeRunning ? 'success' : 'error'} size="sm">
               {localComputeRunning ? 'Running' : 'Not Running'}
-            </span>
-          </div>
+            </Pill>
+          </Flex>
 
           {/* Engine Version */}
           {localComputeRunning && localEngineVersion && (
-            <div className="code-block vce-mb-2">
-              <span className="vce-text-muted">Engine: </span>
-              <span>{localEngineVersion.engine} v{localEngineVersion.version}</span>
-            </div>
+            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+              <Text size="xs" color="muted">Engine: </Text>
+              <Text size="xs">{localEngineVersion.engine} v{localEngineVersion.version}</Text>
+            </Box>
           )}
 
           {/* Open in Browser button when running */}
           {localComputeRunning && (
-            <a
+            <Button
+              variant="secondary"
+              as="a"
               href="http://127.0.0.1:7676/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn w-full"
-              data-variant="ghost"
+              style={{ width: '100%' }}
             >
               Open in Browser
-            </a>
+            </Button>
           )}
 
           {!localComputeRunning && (
-            <p className="vce-hint">
-              Run <code className="code">make serve</code> to start the local Compute server
-            </p>
+            <Text size="xs" color="muted">
+              Run <code style={{ background: 'var(--color-bg-subtle)', padding: '2px 4px', borderRadius: '2px' }}>make serve</code> to start the local Compute server
+            </Text>
           )}
-        </div>
+        </Box>
 
         {/* Deploy to Local Button */}
-        <button
-          onClick={handleDeployLocal}
-          disabled={loading}
-          className="btn w-full vce-mb-2"
-          data-variant="primary"
-        >
+        <Button variant="primary" onClick={handleDeployLocal} disabled={loading} style={{ width: '100%', marginBottom: '8px' }}>
           {loading ? 'Saving...' : 'Save Rules Locally'}
-        </button>
+        </Button>
 
-        <p className="vce-hint">
+        <Text size="xs" color="muted">
           {nodes.length} nodes, {edges.length} edges
-        </p>
+        </Text>
 
         {localComputeRunning && (
-          <p className="vce-hint vce-text-italic">
+          <Text size="xs" color="muted" style={{ fontStyle: 'italic' }}>
             Restart the Compute server to reload rules
-          </p>
+          </Text>
         )}
 
         {/* Status/Error Messages */}
         {error && (
-          <div className="alert vce-mt-3" data-variant="error">
-            <span className="alert-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </span>
-            <div className="alert-content">{error}</div>
-          </div>
+          <Box marginTop="md">
+            <Alert status="error">{error}</Alert>
+          </Box>
         )}
         {status && !error && (
-          <div className="alert vce-mt-3" data-variant="success">
-            <span className="alert-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </span>
-            <div className="alert-content">{status}</div>
-          </div>
+          <Box marginTop="md">
+            <Alert status="success">{status}</Alert>
+          </Box>
         )}
 
         {/* Test URLs */}
         {localComputeRunning && (
-          <div className="vce-mt-3">
-            <label className="form-label">Test URLs</label>
-            <div className="card">
-              <div className="vce-mb-1">
-                <a href="http://127.0.0.1:7676/_version" target="_blank" rel="noopener noreferrer" className="link">
+          <Box marginTop="md">
+            <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>Test URLs</Text>
+            <Box padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+              <Box marginBottom="sm">
+                <a href="http://127.0.0.1:7676/_version" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-link)' }}>
                   /_version
                 </a>
-                <span className="vce-text-muted"> - Engine info</span>
-              </div>
-              <div>
-                <a href="http://127.0.0.1:7676/" target="_blank" rel="noopener noreferrer" className="link">
+                <Text size="xs" color="muted"> - Engine info</Text>
+              </Box>
+              <Box>
+                <a href="http://127.0.0.1:7676/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-link)' }}>
                   /
                 </a>
-                <span className="vce-text-muted"> - Test request</span>
-              </div>
-            </div>
-          </div>
+                <Text size="xs" color="muted"> - Test request</Text>
+              </Box>
+            </Box>
+          </Box>
         )}
-      </div>
+      </Box>
     )
   }
 
   // Show connection UI if not connected to Fastly
   if (!isConnected) {
     return (
-      <div className="vce-fastly-content">
+      <Box padding="md">
         {/* Local Dev Mode button */}
-        <button
-          onClick={checkLocalEnvironment}
-          className="btn w-full vce-mb-4"
-          data-variant="primary"
-        >
+        <Button variant="primary" onClick={checkLocalEnvironment} style={{ width: '100%' }}>
           Use Local Dev Mode
-        </button>
+        </Button>
 
-        <div className="separator">
-          <span className="separator-text">OR</span>
-        </div>
+        <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
+          <Box style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+          <Text size="xs" color="muted">OR</Text>
+          <Box style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+        </Flex>
 
-        <p className="vce-hint vce-mb-3">
+        <Text size="sm" color="muted" style={{ marginBottom: '12px' }}>
           Connect to Fastly to deploy rules to the edge.
-        </p>
+        </Text>
 
-        <div className="form-group vce-mb-3">
-          <label className="form-label">API Token</label>
-          <input
+        <Box marginBottom="md">
+          <TextInput
+            label="API Token"
             type="password"
             value={apiToken}
             onChange={(e) => updateFastlyState({ apiToken: e.target.value })}
             placeholder="Enter your Fastly API token"
-            className="form-input"
           />
-          <p className="vce-hint">
+          <Text size="xs" color="muted" style={{ marginTop: '4px' }}>
             Create a token at{' '}
-            <a href="https://manage.fastly.com/account/personal/tokens" target="_blank" rel="noreferrer" className="link">
+            <a href="https://manage.fastly.com/account/personal/tokens" target="_blank" rel="noreferrer" style={{ color: 'var(--color-link)' }}>
               manage.fastly.com
             </a>
-          </p>
-        </div>
+          </Text>
+        </Box>
 
-        <button
+        <Button
+          variant="primary"
           onClick={handleConnect}
           disabled={loading || !apiToken}
-          className="btn w-full"
-          data-variant="primary"
+          style={{ width: '100%' }}
         >
           {loading ? 'Connecting...' : 'Connect to Fastly'}
-        </button>
+        </Button>
 
         {error && (
-          <div className="alert vce-mt-3" data-variant="error">
-            <span className="alert-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </span>
-            <div className="alert-content">{error}</div>
-          </div>
+          <Box marginTop="md">
+            <Alert status="error">{error}</Alert>
+          </Box>
         )}
-      </div>
+      </Box>
     )
   }
 
   // Connected to Fastly - show full UI
   return (
-    <div className="vce-fastly-content">
+    <Box padding="md">
       {/* Connection status row */}
-      <div className="fui-connection-row">
-        <div className="fui-status" data-variant="success">
-          <span className="fui-status__dot" />
-          <span>Connected</span>
-        </div>
-        <button onClick={handleDisconnect} className="fui-link-btn">
+      <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <Pill status="success">Connected</Pill>
+        <Button variant="secondary" size="sm" onClick={handleDisconnect}>
           Disconnect
-        </button>
-      </div>
+        </Button>
+      </Flex>
 
       {/* Check for local mode button */}
       {!localMode && (
-        <button
-          onClick={checkLocalEnvironment}
-          className="btn w-full vce-mb-3"
-          data-variant="secondary"
-        >
-          Switch to Local Dev Mode
-        </button>
+        <Box marginBottom="md">
+          <Button variant="secondary" onClick={checkLocalEnvironment} style={{ width: '100%' }}>
+            Switch to Local Dev Mode
+          </Button>
+        </Box>
       )}
 
       {/* Create New Service Form */}
       {showCreateForm ? (
-        <div className="fui-info-card vce-mb-3">
-          <div className="fui-info-card__header">
-            <span className="fui-info-card__title">New VCE Service</span>
-            <button onClick={() => setShowCreateForm(false)} className="icon-btn" data-size="sm">×</button>
-          </div>
-          <div className="fui-info-card__body">
-            <div className="form-group vce-mb-2">
-              <label className="form-label">Service Name</label>
-              <input
-                type="text"
-                value={createForm.serviceName}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, serviceName: e.target.value }))}
-                placeholder="my-vce-service"
-                className="form-input"
-              />
-            </div>
+        <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <Text size="sm" style={{ fontWeight: 600 }}>New VCE Service</Text>
+            <Button variant="secondary" size="sm" onClick={() => setShowCreateForm(false)}>×</Button>
+          </Flex>
 
-            {createProgress && (
-              <div className="code-block vce-mb-2">{createProgress}</div>
-            )}
+          <Box marginBottom="sm">
+            <TextInput
+              label="Service Name"
+              value={createForm.serviceName}
+              onChange={(e) => setCreateForm(prev => ({ ...prev, serviceName: e.target.value }))}
+              placeholder="my-vce-service"
+            />
+          </Box>
 
-            <p className="vce-hint vce-mb-2">
-              Service creation takes 1-2 minutes.
-            </p>
+          {createProgress && (
+            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+              {createProgress}
+            </Box>
+          )}
 
-            <button
-              onClick={handleCreateService}
-              disabled={loading || !createForm.serviceName}
-              className="btn w-full"
-              data-variant="primary"
-            >
-              {loading ? 'Creating...' : 'Create Service'}
-            </button>
-          </div>
-        </div>
+          <Text size="xs" color="muted" style={{ marginBottom: '8px' }}>
+            Service creation takes 1-2 minutes.
+          </Text>
+
+          <Button
+            variant="primary"
+            onClick={handleCreateService}
+            disabled={loading || !createForm.serviceName}
+            style={{ width: '100%' }}
+          >
+            {loading ? 'Creating...' : 'Create Service'}
+          </Button>
+        </Box>
       ) : (
-        <button onClick={() => setShowCreateForm(true)} className="fui-btn--dashed vce-mb-3">
-          + Create New VCE Service
-        </button>
+        <Box marginBottom="md">
+          <Button variant="secondary" onClick={() => setShowCreateForm(true)} style={{ width: '100%', border: '1px dashed var(--color-border)' }}>
+            + Create New VCE Service
+          </Button>
+        </Box>
       )}
 
       {/* Service Selection */}
-      <div className="form-group vce-mb-3">
-        <label className="form-label">VCE Service</label>
+      <Box marginBottom="md">
+        <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>VCE Service</Text>
 
         {services.length === 0 ? (
-          <div className="card">
-            <span className="vce-text-muted">No Compute services found. Create one above.</span>
-          </div>
+          <Box padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+            <Text size="sm" color="muted">No Compute services found. Create one above.</Text>
+          </Box>
         ) : (
-          <select
-            value={selectedService}
-            onChange={(e) => handleServiceChange(e.target.value)}
-            className="form-select"
-          >
-            <option value="">Select a Compute service...</option>
-            {services.filter(s => s.isVceEnabled).length > 0 && (
-              <optgroup label="VCE Services">
-                {services.filter(s => s.isVceEnabled).map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </optgroup>
-            )}
-            {services.filter(s => !s.isVceEnabled).length > 0 && (
-              <optgroup label="Other Compute Services">
-                {services.filter(s => !s.isVceEnabled).map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} (not configured)</option>
-                ))}
-              </optgroup>
-            )}
-          </select>
+          <Select
+            options={[
+              ...services.filter(s => s.isVceEnabled).map(s => ({
+                value: s.id,
+                label: s.name,
+                group: 'VCE Services'
+              })),
+              ...services.filter(s => !s.isVceEnabled).map(s => ({
+                value: s.id,
+                label: `${s.name} (not configured)`,
+                group: 'Other Compute Services'
+              }))
+            ]}
+            value={selectedService ? { value: selectedService, label: services.find(s => s.id === selectedService)?.name || '' } : null}
+            onChange={(option) => option && handleServiceChange((option as SelectOptionType).value)}
+            placeholder="Select a Compute service..."
+          />
         )}
-      </div>
+      </Box>
 
       {/* Service Info */}
       {selectedService && (() => {
@@ -1944,180 +1922,165 @@ function FastlyTab({
         return (
           <>
           {/* Service Info Card */}
-          <div className="fui-info-card vce-mb-3">
-            <div className="fui-info-card__header">
-              <span className="fui-info-card__title">Service Info</span>
-              <button
+          <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+            <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <Text size="sm" style={{ fontWeight: 600 }}>Service Info</Text>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleRefreshService}
                 disabled={engineVersionLoading}
-                className="fui-copy-btn"
               >
                 {engineVersionLoading ? '...' : 'Refresh'}
-              </button>
-            </div>
-            <div className="fui-info-card__body">
-              <div className="fui-info-card__row">
-                <span className="fui-info-card__label">Service ID</span>
-                <div className="fui-info-card__value">
-                  <code>{service.id}</code>
-                  <button onClick={() => navigator.clipboard.writeText(service.id)} className="fui-copy-btn">Copy</button>
-                </div>
-              </div>
-              <div className="fui-info-card__row">
-                <span className="fui-info-card__label">Test URL</span>
-                <div className="fui-info-card__value">
-                  <a href={serviceUrl} target="_blank" rel="noreferrer" className="link" style={{ fontSize: '11px' }}>
-                    {service.name}.edgecompute.app
-                  </a>
-                  <button onClick={() => navigator.clipboard.writeText(serviceUrl)} className="fui-copy-btn">Copy</button>
-                </div>
-              </div>
-            </div>
-          </div>
+              </Button>
+            </Flex>
+
+            <Box marginBottom="sm">
+              <Text size="xs" color="muted">Service ID</Text>
+              <Flex style={{ alignItems: 'center', gap: '8px' }}>
+                <Text size="xs" style={{ fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{service.id}</Text>
+                <Button variant="secondary" size="sm" onClick={() => navigator.clipboard.writeText(service.id)}>Copy</Button>
+              </Flex>
+            </Box>
+
+            <Box>
+              <Text size="xs" color="muted">Test URL</Text>
+              <Flex style={{ alignItems: 'center', gap: '8px' }}>
+                <a href={serviceUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--color-link)', fontSize: '11px' }}>
+                  {service.name}.edgecompute.app
+                </a>
+                <Button variant="secondary" size="sm" onClick={() => navigator.clipboard.writeText(serviceUrl)}>Copy</Button>
+              </Flex>
+            </Box>
+          </Box>
 
           {/* Step 1: Engine */}
-          <div className="fui-step">
-            <div className="fui-step__header">
-              <span className="fui-step__number" data-complete={engineVersion?.version === VCE_ENGINE_VERSION}>1</span>
-              <div className="fui-step__info">
-                <h4 className="fui-step__title">Engine (WASM Binary)</h4>
-                <p className="fui-step__description">The code that runs on Fastly's edge servers</p>
-              </div>
-            </div>
+          <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+            <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+              <Box style={{
+                width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: engineVersion?.version === VCE_ENGINE_VERSION ? 'var(--color-success)' : 'var(--color-border)',
+                color: engineVersion?.version === VCE_ENGINE_VERSION ? 'white' : 'var(--color-text-muted)',
+                fontSize: '12px', fontWeight: 600, flexShrink: 0
+              }}>1</Box>
+              <Box>
+                <Text size="sm" style={{ fontWeight: 600 }}>Engine (WASM Binary)</Text>
+                <Text size="xs" color="muted">The code that runs on Fastly's edge servers</Text>
+              </Box>
+            </Flex>
 
             {engineUpdateProgress ? (
-              <div className="code-block">
-                <div className="vce-mb-1">{engineUpdateProgress}</div>
+              <Box padding="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+                <Box marginBottom="sm">{engineUpdateProgress}</Box>
                 {engineUpdateProgress.includes('POPs') && (() => {
                   const match = engineUpdateProgress.match(/(\d+)\/(\d+) POPs \((\d+)%\)/)
                   if (match) {
                     const percent = parseInt(match[3], 10)
                     return (
-                      <div className="vce-progress-bar">
-                        <div className="vce-progress-fill" data-complete={percent >= 95} style={{ width: `${percent}%` }} />
-                      </div>
+                      <Box style={{ height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <Box style={{ height: '100%', width: `${percent}%`, background: percent >= 95 ? 'var(--color-success)' : 'var(--color-info)', transition: 'width 0.3s' }} />
+                      </Box>
                     )
                   }
                   return null
                 })()}
-              </div>
+              </Box>
             ) : engineVersionLoading ? (
-              <div className="fui-engine-box vce-text-muted">Checking...</div>
+              <Flex style={{ justifyContent: 'center', padding: '12px' }}>
+                <LoadingIndicator />
+              </Flex>
             ) : engineVersion ? (
               <>
-                <div className="fui-engine-box">
-                  <div className="fui-engine-box__row">
-                    <span className="fui-engine-box__name">{engineVersion.engine} v{engineVersion.version}</span>
-                    {engineVersion.engine !== 'Visual Compute Engine' ? (
-                      <span className="fui-badge" data-variant="error">Unknown</span>
-                    ) : engineVersion.version === VCE_ENGINE_VERSION ? (
-                      <span className="fui-badge" data-variant="success">Up to date</span>
-                    ) : (
-                      <span className="fui-badge" data-variant="warning">Update available</span>
-                    )}
-                  </div>
-                </div>
+                <Flex style={{ alignItems: 'center', justifyContent: 'space-between', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+                  <Text size="sm">{engineVersion.engine} v{engineVersion.version}</Text>
+                  {engineVersion.engine !== 'Visual Compute Engine' ? (
+                    <Pill status="error" size="sm">Unknown</Pill>
+                  ) : engineVersion.version === VCE_ENGINE_VERSION ? (
+                    <Pill status="success" size="sm">Up to date</Pill>
+                  ) : (
+                    <Pill status="warning" size="sm">Update available</Pill>
+                  )}
+                </Flex>
                 {(engineVersion.engine !== 'Visual Compute Engine' || engineVersion.version !== VCE_ENGINE_VERSION) ? (
                   <>
-                    <p className="vce-hint vce-mt-2">Updates typically take ~30-60s to propagate.</p>
-                    <button onClick={handleUpdateEngine} disabled={loading} className="btn w-full vce-mt-2" data-variant="primary">
+                    <Text size="xs" color="muted" style={{ marginTop: '8px' }}>Updates typically take ~30-60s to propagate.</Text>
+                    <Button variant="primary" onClick={handleUpdateEngine} disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
                       Update Engine to v{VCE_ENGINE_VERSION}
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button onClick={handleUpdateEngine} disabled={loading} className="fui-link-btn vce-mt-2">
+                  <Button variant="secondary" size="sm" onClick={handleUpdateEngine} disabled={loading} style={{ marginTop: '8px' }}>
                     {loading ? 'Re-deploying...' : 'Force Re-deploy Engine'}
-                  </button>
+                  </Button>
                 )}
               </>
             ) : (
-                <>
-                  <div className="code-block">
-                    <span className="vce-text-error">Not detected</span>
-                    <span className="vce-text-muted"> - service may not be deployed</span>
-                  </div>
-                  {selectedConfigStore ? (
-                    <>
-                      <p className="vce-hint vce-text-italic vce-mt-1">
-                        Deployment typically takes ~30-60s to propagate.
-                      </p>
-                      <button
-                        onClick={handleUpdateEngine}
-                        disabled={loading}
-                        className="btn w-full"
-                        data-variant="primary"
-                      >
-                        Deploy Engine v{VCE_ENGINE_VERSION}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="vce-hint vce-text-italic vce-mt-1">
-                        Deploy the engine first, then setup Config Store.
-                      </p>
-                      <button
-                        onClick={handleUpdateEngine}
-                        disabled={loading}
-                        className="btn w-full"
-                        data-variant="primary"
-                      >
-                        Deploy Engine v{VCE_ENGINE_VERSION}
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
-          </div>
+              <>
+                <Box padding="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+                  <Text size="sm" style={{ color: 'var(--color-error)' }}>Not detected</Text>
+                  <Text size="xs" color="muted"> - service may not be deployed</Text>
+                </Box>
+                <Text size="xs" color="muted" style={{ marginTop: '8px', fontStyle: 'italic' }}>
+                  {selectedConfigStore ? 'Deployment typically takes ~30-60s to propagate.' : 'Deploy the engine first, then setup Config Store.'}
+                </Text>
+                <Button variant="primary" onClick={handleUpdateEngine} disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
+                  Deploy Engine v{VCE_ENGINE_VERSION}
+                </Button>
+              </>
+            )}
+          </Box>
           </>
         )
       })()}
 
       {/* Step 2: Config Store */}
       {selectedService && selectedConfigStore && (
-        <div className="fui-step">
-          <div className="fui-step__header">
-            <span className="fui-step__number" data-complete="true">2</span>
-            <div className="fui-step__info">
-              <h4 className="fui-step__title">Config Store</h4>
-              <p className="fui-step__description">Where your rules are stored (edge key-value store)</p>
-            </div>
-          </div>
+        <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+            <Box style={{
+              width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--color-success)', color: 'white', fontSize: '12px', fontWeight: 600, flexShrink: 0
+            }}>2</Box>
+            <Box>
+              <Text size="sm" style={{ fontWeight: 600 }}>Config Store</Text>
+              <Text size="xs" color="muted">Where your rules are stored (edge key-value store)</Text>
+            </Box>
+          </Flex>
 
-          <div className="fui-store-display">
-            <span className="fui-store-display__name">
+          <Flex style={{ alignItems: 'center', justifyContent: 'space-between', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+            <Text size="sm" style={{ fontFamily: 'monospace' }}>
               {configStores.find(s => s.id === selectedConfigStore)?.name || selectedConfigStore}
-            </span>
-            <button
-              onClick={() => fetchStorePreview(selectedConfigStore)}
-              className="fui-copy-btn"
-            >
+            </Text>
+            <Button variant="secondary" size="sm" onClick={() => fetchStorePreview(selectedConfigStore)}>
               {storePreview?.storeId === selectedConfigStore ? 'Hide' : 'View'}
-            </button>
-          </div>
+            </Button>
+          </Flex>
 
           {/* Config Store Preview */}
           {storePreview?.storeId === selectedConfigStore && (
-            <div className="card vce-mt-2 vce-store-preview">
+            <Box marginTop="sm" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '4px', maxHeight: '200px', overflow: 'auto' }}>
               {storePreview.loading && (
-                <div className="vce-text-center vce-text-muted">Loading...</div>
+                <Flex style={{ justifyContent: 'center' }}>
+                  <LoadingIndicator />
+                </Flex>
               )}
               {storePreview.error && (
-                <div className="vce-text-error">{storePreview.error}</div>
+                <Text size="sm" style={{ color: 'var(--color-error)' }}>{storePreview.error}</Text>
               )}
               {!storePreview.loading && !storePreview.error && storePreview.items.length === 0 && (
-                <div className="vce-text-center vce-text-muted">Empty store</div>
+                <Text size="sm" color="muted" style={{ textAlign: 'center' }}>Empty store</Text>
               )}
               {storePreview.items.map((item, idx) => (
-                <div key={idx} className="vce-store-item">
-                  <div className="vce-store-item-key">{item.key}</div>
-                  <div className="vce-store-item-value text-mono">
+                <Box key={idx} marginBottom="sm" style={{ borderBottom: idx < storePreview.items.length - 1 ? '1px solid var(--color-border)' : 'none', paddingBottom: '8px' }}>
+                  <Text size="xs" style={{ fontWeight: 600 }}>{item.key}</Text>
+                  <Text size="xs" color="muted" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
                     {item.value}{item.truncated && '...'}
-                  </div>
-                </div>
+                  </Text>
+                </Box>
               ))}
-            </div>
+            </Box>
           )}
-        </div>
+        </Box>
       )}
 
       {/* Enable VCE button for non-configured services */}
@@ -2125,134 +2088,136 @@ function FastlyTab({
         const service = services.find(s => s.id === selectedService)
         if (!service || service.linkedConfigStore) return null
 
-        const getStatusStyle = () => {
-          if (configStoreStatusLoading) return { variant: 'default', icon: '...' }
-          if (!configStoreStatus) return { variant: 'default', icon: '-' }
+        const getStatusPill = () => {
+          if (configStoreStatusLoading) return <Pill size="sm">Checking...</Pill>
+          if (!configStoreStatus) return <Pill size="sm">Not checked</Pill>
           switch (configStoreStatus.status) {
             case 'linked_ok':
-              return { variant: 'success', icon: '' }
+              return <Pill status="success" size="sm">Ready</Pill>
             case 'linked_outdated':
-              return { variant: 'warning', icon: '' }
+              return <Pill status="warning" size="sm">Update available</Pill>
             case 'linked_no_manifest':
-              return { variant: 'warning', icon: '' }
+              return <Pill status="warning" size="sm">Needs init</Pill>
             case 'not_linked':
-              return { variant: 'default', icon: '-' }
+              return <Pill size="sm">Not linked</Pill>
             case 'error':
-              return { variant: 'error', icon: '' }
+              return <Pill status="error" size="sm">Error</Pill>
             default:
-              return { variant: 'default', icon: '-' }
+              return <Pill size="sm">-</Pill>
           }
         }
-        const statusStyle = getStatusStyle()
 
         return (
-          <div className="card vce-mb-3">
-            <label className="form-label">Step 2: Config Store</label>
+          <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+            <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+              <Box style={{
+                width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--color-border)', color: 'var(--color-text-muted)', fontSize: '12px', fontWeight: 600, flexShrink: 0
+              }}>2</Box>
+              <Box>
+                <Text size="sm" style={{ fontWeight: 600 }}>Config Store</Text>
+                <Text size="xs" color="muted">Setup required</Text>
+              </Box>
+            </Flex>
 
             {/* Status display */}
-            <div className="code-block vce-mb-2">
-              <div className="vce-row">
-                <span className="vce-mr-2">{statusStyle.icon}</span>
-                <span className="flex-1 vce-text-sm">
-                  {configStoreStatusLoading ? 'Checking config store...' :
-                   configStoreStatus ? configStoreStatus.message :
-                   'Click to check config store status'}
-                </span>
+            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+              <Flex style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <Flex style={{ alignItems: 'center', gap: '8px', flex: 1 }}>
+                  {getStatusPill()}
+                  <Text size="xs" color="muted" style={{ flex: 1 }}>
+                    {configStoreStatusLoading ? 'Checking...' :
+                     configStoreStatus ? configStoreStatus.message :
+                     'Click Refresh to check status'}
+                  </Text>
+                </Flex>
                 {!configStoreStatusLoading && (
-                  <button
-                    onClick={() => fetchConfigStoreStatus(selectedService)}
-                    className="btn"
-                    data-size="sm"
-                    data-variant="ghost"
-                    title="Refresh status"
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => fetchConfigStoreStatus(selectedService)}>
                     Refresh
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </Flex>
               {configStoreStatus?.status === 'linked_outdated' && (
-                <div className="vce-text-warning vce-mt-1 vce-text-xs">
-                  Update available: v{configStoreStatus.manifestVersion} to v{configStoreStatus.currentVersion}
-                </div>
+                <Text size="xs" style={{ color: 'var(--color-warning)', marginTop: '4px' }}>
+                  Update available: v{configStoreStatus.manifestVersion} → v{configStoreStatus.currentVersion}
+                </Text>
               )}
-            </div>
+            </Box>
 
             {createProgress && (
-              <div className="code-block vce-mb-2">
+              <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
                 {createProgress}
-              </div>
+              </Box>
             )}
-            <button
-              onClick={handleSetupConfigStore}
-              disabled={loading}
-              className="btn w-full"
-              data-variant="primary"
-            >
+
+            <Button variant="primary" onClick={handleSetupConfigStore} disabled={loading} style={{ width: '100%' }}>
               {loading ? 'Setting up...' :
                configStoreStatus?.status === 'linked_ok' ? 'Re-deploy VCE Engine' :
                configStoreStatus?.status === 'linked_outdated' ? 'Update VCE Engine' :
                configStoreStatus?.status === 'linked_no_manifest' ? 'Initialize Config Store' :
                'Setup Config Store'}
-            </button>
-          </div>
+            </Button>
+          </Box>
         )
       })()}
 
       {/* Step 3: Deploy Rules */}
-      <div className="fui-step">
-        <div className="fui-step__header">
-          <span className="fui-step__number">3</span>
-          <div className="fui-step__info">
-            <h4 className="fui-step__title">Deploy Rules</h4>
-            <p className="fui-step__description">Push your graph to the edge (updates in ~30-40 seconds)</p>
-          </div>
-        </div>
+      <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+        <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+          <Box style={{
+            width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--color-border)', color: 'var(--color-text-muted)', fontSize: '12px', fontWeight: 600, flexShrink: 0
+          }}>3</Box>
+          <Box>
+            <Text size="sm" style={{ fontWeight: 600 }}>Deploy Rules</Text>
+            <Text size="xs" color="muted">Push your graph to the edge (updates in ~30-40 seconds)</Text>
+          </Box>
+        </Flex>
 
-        <button
+        <Button
+          variant="primary"
           onClick={handleDeployRules}
           disabled={loading || !selectedConfigStore || !selectedService}
-          className="btn w-full"
-          data-variant="primary"
+          style={{ width: '100%' }}
         >
           {deployStatus === 'deploying' ? 'Deploying...' :
            deployStatus === 'verifying' ? 'Verifying...' :
            'Deploy Rules'}
-        </button>
+        </Button>
 
         {/* Deployment Status */}
         {deployStatus !== 'idle' && (
-          <div
-            className="fui-status vce-mt-2 w-full"
-            data-variant={
-              deployStatus === 'verified' ? 'success' :
-              deployStatus === 'timeout' ? 'warning' :
-              deployStatus === 'error' ? 'error' : undefined
-            }
-            style={{ justifyContent: 'flex-start' }}
-          >
-            <span className="fui-status__dot" />
-            <span>
+          <Box marginTop="sm">
+            <Pill
+              status={
+                deployStatus === 'verified' ? 'success' :
+                deployStatus === 'timeout' ? 'warning' :
+                deployStatus === 'error' ? 'error' : undefined
+              }
+            >
               {deployStatus === 'deploying' ? 'Pushing to Config Store...' :
                deployStatus === 'verifying' ? 'Verifying deployment...' :
                deployStatus === 'verified' ? 'Deployment verified' :
                deployStatus === 'timeout' ? 'Verification timed out' :
                deployStatus === 'error' ? 'Deployment failed' : ''}
-            </span>
-          </div>
+            </Pill>
+          </Box>
         )}
 
-        <div className="fui-deploy-stats vce-mt-3">
-          <div className="fui-deploy-stat">
-            <span className="fui-deploy-stat__label">Nodes</span>
-            <span className="fui-deploy-stat__value">{nodes.length}</span>
-          </div>
-          <div className="fui-deploy-stat">
-            <span className="fui-deploy-stat__label">Edges</span>
-            <span className="fui-deploy-stat__value">{edges.length}</span>
-          </div>
-        </div>
+        <Flex style={{ gap: '16px', marginTop: '12px' }}>
+          <Box style={{ flex: 1, textAlign: 'center', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+            <Text size="xs" color="muted">Nodes</Text>
+            <Text size="lg" style={{ fontWeight: 600 }}>{nodes.length}</Text>
+          </Box>
+          <Box style={{ flex: 1, textAlign: 'center', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+            <Text size="xs" color="muted">Edges</Text>
+            <Text size="lg" style={{ fontWeight: 600 }}>{edges.length}</Text>
+          </Box>
+        </Flex>
 
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={async () => {
             const validation = validateGraph(nodes, edges)
             if (!validation.valid) {
@@ -2276,36 +2241,23 @@ function FastlyTab({
             setStatus('Exported graph.json')
           }}
           disabled={loading}
-          className="fui-link-btn"
+          style={{ marginTop: '12px' }}
         >
           Export JSON (for local dev)
-        </button>
-      </div>
+        </Button>
+      </Box>
 
       {/* Status/Error Messages */}
       {error && (
-        <div className="alert vce-mt-3" data-variant="error">
-          <span className="alert-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </span>
-          <div className="alert-content">{error}</div>
-        </div>
+        <Box marginTop="md">
+          <Alert status="error">{error}</Alert>
+        </Box>
       )}
       {status && !error && (
-        <div className="alert vce-mt-3" data-variant="success">
-          <span className="alert-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-          </span>
-          <div className="alert-content">{status}</div>
-        </div>
+        <Box marginTop="md">
+          <Alert status="success">{status}</Alert>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

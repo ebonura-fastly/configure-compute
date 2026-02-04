@@ -19,6 +19,7 @@ import {
   SelectionMode,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { Flex, Text, Switch } from '@fastly/beacon'
 
 import { ConditionNode, ActionNode, RequestNode, RateLimitNode, TransformNode, BackendNode, LoggingNode, RuleGroupNode, HeaderNode, CacheNode } from './components/nodes'
 import { DeletableEdge } from './components/edges'
@@ -138,16 +139,11 @@ function Flow() {
       {/* Header */}
       <header className="vce-header">
         <span className="vce-header-title">Visual Compute Engine</span>
-        <label className="vce-switch-label" title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
-          <span>Light</span>
-          <input
-            type="checkbox"
-            className="vce-switch"
-            checked={isDark}
-            onChange={toggle}
-          />
-          <span>Dark</span>
-        </label>
+        <Flex alignItems="center" gap="sm">
+          <Text size="xs" color="muted">Light</Text>
+          <Switch checked={isDark} onChange={toggle} />
+          <Text size="xs" color="muted">Dark</Text>
+        </Flex>
       </header>
 
       {/* Main Content */}
@@ -199,28 +195,20 @@ function Flow() {
                 Drag components from the sidebar onto the canvas,<br />
                 or use a template to get started quickly.
               </p>
-              <div className="vce-quick-guide">
-                <div className="vce-quick-guide-step">
-                  <span className="vce-quick-guide-number">1</span>
-                  <div className="vce-quick-guide-content">
-                    <h3 className="vce-quick-guide-title">Add a Request Node</h3>
-                    <p className="vce-quick-guide-desc">Start with a Request node as your entry point. This captures incoming traffic.</p>
+              <div className="vce-empty-canvas-steps">
+                {[
+                  { num: 1, title: 'Add a Request Node', desc: 'Start with a Request node as your entry point. This captures incoming traffic.' },
+                  { num: 2, title: 'Add Conditions', desc: 'Connect Condition nodes to inspect request fields like path, headers, or IP.' },
+                  { num: 3, title: 'Define Actions', desc: 'Add Action nodes to block, allow, rate-limit, or route traffic to backends.' }
+                ].map(step => (
+                  <div key={step.num} className="fui-step__header">
+                    <span className="fui-step__number">{step.num}</span>
+                    <div className="fui-step__info">
+                      <p className="fui-step__title">{step.title}</p>
+                      <p className="fui-step__description">{step.desc}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="vce-quick-guide-step">
-                  <span className="vce-quick-guide-number">2</span>
-                  <div className="vce-quick-guide-content">
-                    <h3 className="vce-quick-guide-title">Add Conditions</h3>
-                    <p className="vce-quick-guide-desc">Connect Condition nodes to inspect request fields like path, headers, or IP.</p>
-                  </div>
-                </div>
-                <div className="vce-quick-guide-step">
-                  <span className="vce-quick-guide-number">3</span>
-                  <div className="vce-quick-guide-content">
-                    <h3 className="vce-quick-guide-title">Define Actions</h3>
-                    <p className="vce-quick-guide-desc">Add Action nodes to block, allow, rate-limit, or route traffic to backends.</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import type { Node, Edge } from '@xyflow/react'
+import { Button, Flex, Text, TextInput, Switch, Alert, Pill } from '@fastly/beacon'
 import {
   validateGraph,
   generateCompressedConfigStoreContent,
@@ -86,41 +87,42 @@ export function DeployPanel({ nodes, edges }: Props) {
 
   if (!isOpen) {
     return (
-      <button onClick={() => setIsOpen(true)} className="vce-panel-toggle vce-panel-toggle--deploy">
+      <Button
+        variant="primary"
+        onClick={() => setIsOpen(true)}
+        className="vce-panel-toggle vce-panel-toggle--deploy"
+      >
         Deploy
-      </button>
+      </Button>
     )
   }
+
+  const usagePercent = stats ? Math.round((stats.compressedSize / 8000) * 100) : 0
+  const usageWidth = stats ? Math.min((stats.compressedSize / 8000) * 100, 100) : 0
 
   return (
     <div className="vce-panel vce-panel--deploy">
       <div className="vce-panel-header">
         <span>Deploy to Fastly</span>
-        <button onClick={() => setIsOpen(false)} className="vce-panel-close">×</button>
+        <button className="vce-panel-close" onClick={() => setIsOpen(false)}>×</button>
       </div>
 
       <div className="vce-panel-body">
         {/* Service Config */}
         <div className="vce-panel-section">
           <div className="vce-panel-section-title">Service Configuration</div>
-          <div className="form-group vce-mb-2">
-            <label className="form-label">Service Name</label>
-            <input
-              type="text"
+          <div className="vce-mb-3">
+            <TextInput
+              label="Service Name"
               value={config.name}
               onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
-              className="form-input"
-              data-size="sm"
             />
           </div>
-          <div className="form-group">
-            <label className="form-label">Config Store Name</label>
-            <input
-              type="text"
+          <div>
+            <TextInput
+              label="Config Store Name"
               value={config.configStoreName}
               onChange={(e) => setConfig(prev => ({ ...prev, configStoreName: e.target.value }))}
-              className="form-input"
-              data-size="sm"
             />
           </div>
         </div>
@@ -130,134 +132,115 @@ export function DeployPanel({ nodes, edges }: Props) {
           <div className="vce-panel-section-title">Backend (Protected Origin)</div>
           {config.backends.map((backend, idx) => (
             <div key={idx}>
-              <div className="form-group vce-mb-2">
-                <label className="form-label">Backend Name</label>
-                <input
-                  type="text"
+              <div className="vce-mb-3">
+                <TextInput
+                  label="Backend Name"
                   value={backend.name}
                   onChange={(e) => updateBackend(idx, 'name', e.target.value)}
-                  className="form-input"
-                  data-size="sm"
                 />
               </div>
-              <div className="form-group vce-mb-2">
-                <label className="form-label">Host</label>
-                <input
-                  type="text"
+              <div className="vce-mb-3">
+                <TextInput
+                  label="Host"
                   value={backend.host}
                   onChange={(e) => updateBackend(idx, 'host', e.target.value)}
-                  className="form-input"
-                  data-size="sm"
                   placeholder="origin.example.com"
                 />
               </div>
-              <label className="form-checkbox">
-                <input
-                  type="checkbox"
+              <Flex alignItems="center" gap="sm">
+                <Switch
                   checked={backend.useTls ?? true}
-                  onChange={(e) => updateBackend(idx, 'useTls', e.target.checked)}
+                  onChange={(checked) => updateBackend(idx, 'useTls', checked)}
                 />
-                <span className="form-checkbox-label">Use TLS (HTTPS)</span>
-              </label>
+                <Text size="sm">Use TLS (HTTPS)</Text>
+              </Flex>
             </div>
           ))}
         </div>
 
         {/* Actions */}
-        <div className="vce-panel-actions">
-          <button onClick={handlePack} className="btn flex-1" data-variant="primary">
+        <div className="vce-panel-section">
+          <Button variant="primary" onClick={handlePack} className="vce-btn-full-width">
             Pack Rules
-          </button>
+          </Button>
         </div>
 
         {/* Validation Errors */}
         {errors.length > 0 && (
-          <div className="alert vce-mt-3" data-variant="error">
-            <span className="alert-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </span>
-            <div className="alert-content">
-              <div className="alert-title">Validation Errors</div>
+          <div className="vce-panel-section">
+            <Alert status="error">
+              <p className="vce-panel-error-title">Validation Errors</p>
               {errors.map((err, i) => (
-                <div key={i}>• {err}</div>
+                <p key={i} className="vce-panel-error-item">• {err}</p>
               ))}
-            </div>
+            </Alert>
           </div>
         )}
 
         {/* Compression Stats */}
         {stats && (
-          <div className="vce-panel-stats vce-mt-3">
-            <div className="vce-panel-stats-title">Compression Stats</div>
-            <div className="vce-panel-stat-row">
-              <span>Original:</span>
-              <span>{stats.originalSize.toLocaleString()} bytes</span>
-            </div>
-            <div className="vce-panel-stat-row">
-              <span>Compressed:</span>
-              <span>{stats.compressedSize.toLocaleString()} bytes</span>
-            </div>
-            <div className="vce-panel-stat-row">
-              <span>Ratio:</span>
-              <span className="vce-text-success">{stats.compressionRatio}% smaller</span>
-            </div>
+          <div className="vce-panel-section">
+            <div className="vce-panel-stats">
+              <div className="vce-panel-stats-title">Compression Stats</div>
 
-            {/* Config Store Usage Meter */}
-            <div className="vce-meter-section">
-              <div className="vce-meter-label">
-                <span>Config Store Usage</span>
-                <span>{Math.round((stats.compressedSize / 8000) * 100)}% of 8KB</span>
+              <div className="vce-panel-stat-row">
+                <span className="vce-text-muted vce-text-xs">Original:</span>
+                <span className="vce-text-xs">{stats.originalSize.toLocaleString()} bytes</span>
               </div>
-              <div className="vce-meter">
-                <div
-                  className="vce-meter-fill"
-                  data-state={
-                    !stats.fitsInConfigStore ? 'error' :
-                    stats.compressedSize > 6400 ? 'warning' : 'success'
-                  }
-                  style={{ width: `${Math.min((stats.compressedSize / 8000) * 100, 100)}%` }}
-                />
+              <div className="vce-panel-stat-row">
+                <span className="vce-text-muted vce-text-xs">Compressed:</span>
+                <span className="vce-text-xs">{stats.compressedSize.toLocaleString()} bytes</span>
               </div>
-              <div className="vce-meter-hint">
-                {stats.fitsInConfigStore
-                  ? stats.compressedSize > 6400
-                    ? 'Approaching limit - consider simplifying rules'
-                    : 'Plenty of room for more rules'
-                  : 'Exceeds 8KB limit - reduce rule complexity'}
+              <div className="vce-panel-stat-row vce-mb-3">
+                <span className="vce-text-muted vce-text-xs">Ratio:</span>
+                <Pill status="success" size="sm">{stats.compressionRatio}% smaller</Pill>
               </div>
-            </div>
 
-            {stats.fitsInConfigStore && (
-              <div className="vce-panel-actions vce-mt-3">
-                <button onClick={handleExportConfigStore} className="btn flex-1" data-variant="secondary">
-                  Export Config Store JSON
-                </button>
-                <button onClick={handleExportFastlyToml} className="btn flex-1" data-variant="secondary">
-                  Export fastly.toml
-                </button>
+              {/* Config Store Usage Meter */}
+              <div className="vce-mb-3">
+                <div className="vce-panel-stat-row vce-mb-1">
+                  <span className="vce-text-muted vce-text-xs">Config Store Usage</span>
+                  <span className="vce-text-xs">{usagePercent}% of 8KB</span>
+                </div>
+                <div className="vce-progress-bar">
+                  <div
+                    className="vce-progress-fill"
+                    data-complete={stats.fitsInConfigStore && stats.compressedSize <= 6400}
+                    data-warning={stats.fitsInConfigStore && stats.compressedSize > 6400}
+                    data-error={!stats.fitsInConfigStore}
+                    style={{ width: `${usageWidth}%` }}
+                  />
+                </div>
+                <p className="vce-text-muted vce-text-xs vce-mt-1">
+                  {stats.fitsInConfigStore
+                    ? stats.compressedSize > 6400
+                      ? 'Approaching limit - consider simplifying rules'
+                      : 'Plenty of room for more rules'
+                    : 'Exceeds 8KB limit - reduce rule complexity'}
+                </p>
               </div>
-            )}
+
+              {stats.fitsInConfigStore && (
+                <Flex gap="sm">
+                  <Button variant="secondary" size="sm" onClick={handleExportConfigStore}>
+                    Export Config Store JSON
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={handleExportFastlyToml}>
+                    Export fastly.toml
+                  </Button>
+                </Flex>
+              )}
+            </div>
           </div>
         )}
 
         {/* Info */}
-        <div className="alert vce-mt-3" data-variant="info">
-          <span className="alert-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-          </span>
-          <div className="alert-content">
+        <Alert status="info">
+          <span className="vce-text-xs">
             Rules are compressed using gzip and base64 encoded to maximize storage efficiency.
             Config Store limit: 8,000 characters per value.
-          </div>
-        </div>
+          </span>
+        </Alert>
       </div>
     </div>
   )

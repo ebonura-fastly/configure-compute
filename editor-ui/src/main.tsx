@@ -1,10 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { BeaconProvider } from './BeaconProvider'
 
-// Design tokens and component styles
+// Design tokens (CSS variables) - needed for our custom styling
 import './styles/tokens.css'
-import './styles/components.css'
+// VCE-specific styles (nodes, layout)
 import './styles/nodes.css'
 import './index.css'
 
@@ -14,6 +15,8 @@ initializeTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <BeaconProvider>
+      <App />
+    </BeaconProvider>
   </StrictMode>,
 )
