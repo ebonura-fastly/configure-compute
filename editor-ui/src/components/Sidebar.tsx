@@ -1838,6 +1838,17 @@ function FastlyTab({
   // Connected to Fastly - show full UI
   return (
     <div className="vce-fastly-content">
+      {/* Connection status row */}
+      <div className="fui-connection-row">
+        <div className="fui-status" data-variant="success">
+          <span className="fui-status__dot" />
+          <span>Connected</span>
+        </div>
+        <button onClick={handleDisconnect} className="fui-link-btn">
+          Disconnect
+        </button>
+      </div>
+
       {/* Check for local mode button */}
       {!localMode && (
         <button
@@ -1849,72 +1860,45 @@ function FastlyTab({
         </button>
       )}
 
-      <div className="alert vce-mb-3" data-variant="success">
-        <span className="alert-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-        </span>
-        <div className="alert-content">Connected</div>
-        <button
-          onClick={handleDisconnect}
-          className="btn btn--link"
-          data-size="sm"
-        >
-          Disconnect
-        </button>
-      </div>
-
       {/* Create New Service Form */}
       {showCreateForm ? (
-        <div className="card vce-mb-3">
-          <div className="card-header">
-            <span className="card-title">New VCE Service</span>
-            <button
-              onClick={() => setShowCreateForm(false)}
-              className="icon-btn"
-              data-size="sm"
-            >x</button>
+        <div className="fui-info-card vce-mb-3">
+          <div className="fui-info-card__header">
+            <span className="fui-info-card__title">New VCE Service</span>
+            <button onClick={() => setShowCreateForm(false)} className="icon-btn" data-size="sm">×</button>
           </div>
-
-          <div className="form-group vce-mb-2">
-            <label className="form-label">Service Name</label>
-            <input
-              type="text"
-              value={createForm.serviceName}
-              onChange={(e) => setCreateForm(prev => ({ ...prev, serviceName: e.target.value }))}
-              placeholder="my-vce-service"
-              className="form-input"
-              data-size="sm"
-            />
-          </div>
-
-          {createProgress && (
-            <div className="code-block vce-mb-2">
-              {createProgress}
+          <div className="fui-info-card__body">
+            <div className="form-group vce-mb-2">
+              <label className="form-label">Service Name</label>
+              <input
+                type="text"
+                value={createForm.serviceName}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, serviceName: e.target.value }))}
+                placeholder="my-vce-service"
+                className="form-input"
+              />
             </div>
-          )}
 
-          <p className="vce-hint vce-mb-2 vce-text-italic">
-            Service creation takes 1-2 minutes. Use the refresh button to check status.
-          </p>
+            {createProgress && (
+              <div className="code-block vce-mb-2">{createProgress}</div>
+            )}
 
-          <button
-            onClick={handleCreateService}
-            disabled={loading || !createForm.serviceName}
-            className="btn w-full"
-            data-variant="primary"
-          >
-            {loading ? 'Creating...' : 'Create Service'}
-          </button>
+            <p className="vce-hint vce-mb-2">
+              Service creation takes 1-2 minutes.
+            </p>
+
+            <button
+              onClick={handleCreateService}
+              disabled={loading || !createForm.serviceName}
+              className="btn w-full"
+              data-variant="primary"
+            >
+              {loading ? 'Creating...' : 'Create Service'}
+            </button>
+          </div>
         </div>
       ) : (
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="btn w-full vce-mb-3"
-          data-variant="dashed"
-        >
+        <button onClick={() => setShowCreateForm(true)} className="fui-btn--dashed vce-mb-3">
           + Create New VCE Service
         </button>
       )}
@@ -1958,124 +1942,94 @@ function FastlyTab({
         if (!service) return null
         const serviceUrl = `https://${generateDomainName(service.name)}`
         return (
-          <div className="card vce-mb-3">
-            {/* Service header with refresh button */}
-            <div className="card-header">
-              <label className="form-label vce-mb-0">Service ID</label>
+          {/* Service Info Card */}
+          <div className="fui-info-card vce-mb-3">
+            <div className="fui-info-card__header">
+              <span className="fui-info-card__title">Service Info</span>
               <button
                 onClick={handleRefreshService}
                 disabled={engineVersionLoading}
-                title="Refresh service status"
-                className="btn"
-                data-size="sm"
-                data-variant="ghost"
+                className="fui-copy-btn"
               >
                 {engineVersionLoading ? '...' : 'Refresh'}
               </button>
             </div>
-            <div className="vce-mb-2">
-              <div className="vce-row">
-                <code className="code flex-1 text-truncate">{service.id}</code>
-                <button
-                  onClick={() => navigator.clipboard.writeText(service.id)}
-                  title="Copy Service ID"
-                  className="btn"
-                  data-size="sm"
-                  data-variant="ghost"
-                >Copy</button>
+            <div className="fui-info-card__body">
+              <div className="fui-info-card__row">
+                <span className="fui-info-card__label">Service ID</span>
+                <div className="fui-info-card__value">
+                  <code>{service.id}</code>
+                  <button onClick={() => navigator.clipboard.writeText(service.id)} className="fui-copy-btn">Copy</button>
+                </div>
+              </div>
+              <div className="fui-info-card__row">
+                <span className="fui-info-card__label">Test URL</span>
+                <div className="fui-info-card__value">
+                  <a href={serviceUrl} target="_blank" rel="noreferrer" className="link" style={{ fontSize: '11px' }}>
+                    {service.name}.edgecompute.app
+                  </a>
+                  <button onClick={() => navigator.clipboard.writeText(serviceUrl)} className="fui-copy-btn">Copy</button>
+                </div>
               </div>
             </div>
-            <div>
-              <label className="form-label">Test URL</label>
-              <div className="vce-row">
-                <a
-                  href={serviceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="code link flex-1 text-truncate"
-                >{serviceUrl}</a>
-                <button
-                  onClick={() => navigator.clipboard.writeText(serviceUrl)}
-                  title="Copy URL"
-                  className="btn"
-                  data-size="sm"
-                  data-variant="ghost"
-                >Copy</button>
+          </div>
+
+          {/* Step 1: Engine */}
+          <div className="fui-step">
+            <div className="fui-step__header">
+              <span className="fui-step__number" data-complete={engineVersion?.version === VCE_ENGINE_VERSION}>1</span>
+              <div className="fui-step__info">
+                <h4 className="fui-step__title">Engine (WASM Binary)</h4>
+                <p className="fui-step__description">The code that runs on Fastly's edge servers</p>
               </div>
             </div>
-            {/* Engine Version */}
-            <div className="vce-mt-2">
-              <label className="form-label">Step 1: Engine (WASM Binary)</label>
-              <p className="vce-hint">The code that runs on Fastly's edge servers</p>
-              {engineUpdateProgress ? (
-                <div className="code-block">
-                  <div className="vce-mb-1">{engineUpdateProgress}</div>
-                  {/* Progress bar for edge propagation */}
-                  {engineUpdateProgress.includes('POPs') && (() => {
-                    const match = engineUpdateProgress.match(/(\d+)\/(\d+) POPs \((\d+)%\)/)
-                    if (match) {
-                      const percent = parseInt(match[3], 10)
-                      return (
-                        <div className="vce-progress-bar">
-                          <div
-                            className="vce-progress-fill"
-                            data-complete={percent >= 95}
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                      )
-                    }
-                    return null
-                  })()}
-                </div>
-              ) : engineVersionLoading ? (
-                <div className="code-block vce-text-muted">
-                  Checking...
-                </div>
-              ) : engineVersion ? (
-                <>
-                  <div className="vce-row vce-mb-1">
-                    <div className="code flex-1">
-                      <span className="text-mono">
-                        {engineVersion.engine} v{engineVersion.version}
-                      </span>
-                      {engineVersion.engine !== 'Visual Compute Engine' ? (
-                        <span className="badge vce-ml-2" data-variant="error">UNKNOWN ENGINE</span>
-                      ) : engineVersion.version === VCE_ENGINE_VERSION ? (
-                        <span className="badge vce-ml-2" data-variant="success">UP TO DATE</span>
-                      ) : (
-                        <span className="badge vce-ml-2" data-variant="warning">UPDATE AVAILABLE</span>
-                      )}
-                    </div>
+
+            {engineUpdateProgress ? (
+              <div className="code-block">
+                <div className="vce-mb-1">{engineUpdateProgress}</div>
+                {engineUpdateProgress.includes('POPs') && (() => {
+                  const match = engineUpdateProgress.match(/(\d+)\/(\d+) POPs \((\d+)%\)/)
+                  if (match) {
+                    const percent = parseInt(match[3], 10)
+                    return (
+                      <div className="vce-progress-bar">
+                        <div className="vce-progress-fill" data-complete={percent >= 95} style={{ width: `${percent}%` }} />
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            ) : engineVersionLoading ? (
+              <div className="fui-engine-box vce-text-muted">Checking...</div>
+            ) : engineVersion ? (
+              <>
+                <div className="fui-engine-box">
+                  <div className="fui-engine-box__row">
+                    <span className="fui-engine-box__name">{engineVersion.engine} v{engineVersion.version}</span>
+                    {engineVersion.engine !== 'Visual Compute Engine' ? (
+                      <span className="fui-badge" data-variant="error">Unknown</span>
+                    ) : engineVersion.version === VCE_ENGINE_VERSION ? (
+                      <span className="fui-badge" data-variant="success">Up to date</span>
+                    ) : (
+                      <span className="fui-badge" data-variant="warning">Update available</span>
+                    )}
                   </div>
-                  {/* Update button */}
-                  {(engineVersion.engine !== 'Visual Compute Engine' || engineVersion.version !== VCE_ENGINE_VERSION) ? (
-                    <>
-                      <p className="vce-hint vce-text-italic">
-                        Updates typically take ~30-60s to propagate.
-                      </p>
-                      <button
-                        onClick={handleUpdateEngine}
-                        disabled={loading}
-                        className="btn w-full"
-                        data-variant="primary"
-                      >
-                        Update Engine to v{VCE_ENGINE_VERSION}
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={handleUpdateEngine}
-                      disabled={loading}
-                      className="btn vce-mt-1"
-                      data-size="sm"
-                      data-variant="ghost"
-                    >
-                      {loading ? 'Re-deploying...' : 'Force Re-deploy Engine'}
+                </div>
+                {(engineVersion.engine !== 'Visual Compute Engine' || engineVersion.version !== VCE_ENGINE_VERSION) ? (
+                  <>
+                    <p className="vce-hint vce-mt-2">Updates typically take ~30-60s to propagate.</p>
+                    <button onClick={handleUpdateEngine} disabled={loading} className="btn w-full vce-mt-2" data-variant="primary">
+                      Update Engine to v{VCE_ENGINE_VERSION}
                     </button>
-                  )}
-                </>
-              ) : (
+                  </>
+                ) : (
+                  <button onClick={handleUpdateEngine} disabled={loading} className="fui-link-btn vce-mt-2">
+                    {loading ? 'Re-deploying...' : 'Force Re-deploy Engine'}
+                  </button>
+                )}
+              </>
+            ) : (
                 <>
                   <div className="code-block">
                     <span className="vce-text-error">Not detected</span>
@@ -2117,22 +2071,24 @@ function FastlyTab({
         )
       })()}
 
-      {/* Config Store */}
+      {/* Step 2: Config Store */}
       {selectedService && selectedConfigStore && (
-        <>
-          <label className="form-label">Step 2: Config Store</label>
-          <p className="vce-hint">Where your rules are stored (edge key-value store)</p>
-          <div className="alert vce-mb-2" data-variant="success">
-            <div className="vce-row flex-1">
-              <span>
-                {configStores.find(s => s.id === selectedConfigStore)?.name || selectedConfigStore}
-              </span>
+        <div className="fui-step">
+          <div className="fui-step__header">
+            <span className="fui-step__number" data-complete="true">2</span>
+            <div className="fui-step__info">
+              <h4 className="fui-step__title">Config Store</h4>
+              <p className="fui-step__description">Where your rules are stored (edge key-value store)</p>
             </div>
+          </div>
+
+          <div className="fui-store-display">
+            <span className="fui-store-display__name">
+              {configStores.find(s => s.id === selectedConfigStore)?.name || selectedConfigStore}
+            </span>
             <button
               onClick={() => fetchStorePreview(selectedConfigStore)}
-              className="btn"
-              data-size="sm"
-              data-variant="ghost"
+              className="fui-copy-btn"
             >
               {storePreview?.storeId === selectedConfigStore ? 'Hide' : 'View'}
             </button>
@@ -2140,7 +2096,7 @@ function FastlyTab({
 
           {/* Config Store Preview */}
           {storePreview?.storeId === selectedConfigStore && (
-            <div className="card vce-mb-2 vce-store-preview">
+            <div className="card vce-mt-2 vce-store-preview">
               {storePreview.loading && (
                 <div className="vce-text-center vce-text-muted">Loading...</div>
               )}
@@ -2160,7 +2116,7 @@ function FastlyTab({
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Enable VCE button for non-configured services */}
@@ -2241,10 +2197,16 @@ function FastlyTab({
         )
       })()}
 
-      {/* Deploy Rules - Step 3 */}
-      <div className="vce-mb-3">
-        <label className="form-label">Step 3: Deploy Rules</label>
-        <p className="vce-hint">Push your graph to the edge (updates in ~30-40 seconds)</p>
+      {/* Step 3: Deploy Rules */}
+      <div className="fui-step">
+        <div className="fui-step__header">
+          <span className="fui-step__number">3</span>
+          <div className="fui-step__info">
+            <h4 className="fui-step__title">Deploy Rules</h4>
+            <p className="fui-step__description">Push your graph to the edge (updates in ~30-40 seconds)</p>
+          </div>
+        </div>
+
         <button
           onClick={handleDeployRules}
           disabled={loading || !selectedConfigStore || !selectedService}
@@ -2255,86 +2217,92 @@ function FastlyTab({
            deployStatus === 'verifying' ? 'Verifying...' :
            'Deploy Rules'}
         </button>
-      </div>
 
-      {/* Deployment Status */}
-      {deployStatus !== 'idle' && (
-        <div
-          className="alert vce-mb-2"
-          data-variant={
-            deployStatus === 'verified' ? 'success' :
-            deployStatus === 'timeout' ? 'warning' :
-            deployStatus === 'error' ? 'error' : 'info'
-          }
-        >
-          <div className="vce-row">
-            <span className="vce-mr-2">
-              {deployStatus === 'deploying' ? '...' :
-               deployStatus === 'verifying' ? '...' :
-               deployStatus === 'verified' ? '' :
-               deployStatus === 'timeout' ? '' :
-               deployStatus === 'error' ? '' : ''}
-            </span>
+        {/* Deployment Status */}
+        {deployStatus !== 'idle' && (
+          <div
+            className="fui-status vce-mt-2 w-full"
+            data-variant={
+              deployStatus === 'verified' ? 'success' :
+              deployStatus === 'timeout' ? 'warning' :
+              deployStatus === 'error' ? 'error' : undefined
+            }
+            style={{ justifyContent: 'flex-start' }}
+          >
+            <span className="fui-status__dot" />
             <span>
               {deployStatus === 'deploying' ? 'Pushing to Config Store...' :
                deployStatus === 'verifying' ? 'Verifying deployment...' :
                deployStatus === 'verified' ? 'Deployment verified' :
-               deployStatus === 'timeout' ? 'Verification timed out (may still propagate)' :
+               deployStatus === 'timeout' ? 'Verification timed out' :
                deployStatus === 'error' ? 'Deployment failed' : ''}
             </span>
           </div>
-          {deployProgress && (
-            <div className="vce-text-xs text-mono vce-mt-1">
-              {deployProgress}
-            </div>
-          )}
+        )}
+
+        <div className="fui-deploy-stats vce-mt-3">
+          <div className="fui-deploy-stat">
+            <span className="fui-deploy-stat__label">Nodes</span>
+            <span className="fui-deploy-stat__value">{nodes.length}</span>
+          </div>
+          <div className="fui-deploy-stat">
+            <span className="fui-deploy-stat__label">Edges</span>
+            <span className="fui-deploy-stat__value">{edges.length}</span>
+          </div>
         </div>
-      )}
 
-      <p className="vce-hint">
-        {nodes.length} nodes, {edges.length} edges
-      </p>
+        <button
+          onClick={async () => {
+            const validation = validateGraph(nodes, edges)
+            if (!validation.valid) {
+              setError(`Validation failed:\n- ${validation.errors.join('\n- ')}`)
+              return
+            }
 
-      {/* Export JSON Button for local development */}
-      <button
-        onClick={async () => {
-          const validation = validateGraph(nodes, edges)
-          if (!validation.valid) {
-            setError(`Validation failed:\n- ${validation.errors.join('\n- ')}`)
-            return
-          }
+            const graphPayload = { nodes, edges }
+            const fileContent = JSON.stringify(graphPayload, null, 2)
 
-          const graphPayload = { nodes, edges }
-          const fileContent = JSON.stringify(graphPayload, null, 2)
+            const blob = new Blob([fileContent], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'graph.json'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
 
-          const blob = new Blob([fileContent], { type: 'application/json' })
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = 'graph.json'
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(url)
-
-          setStatus('Exported graph.json - readable JSON format for inspection')
-        }}
-        disabled={loading}
-        className="btn w-full vce-mt-2"
-        data-variant="secondary"
-      >
-        Export JSON (for local dev)
-      </button>
+            setStatus('Exported graph.json')
+          }}
+          disabled={loading}
+          className="fui-link-btn"
+        >
+          Export JSON (for local dev)
+        </button>
+      </div>
 
       {/* Status/Error Messages */}
       {error && (
         <div className="alert vce-mt-3" data-variant="error">
-          {error}
+          <span className="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </span>
+          <div className="alert-content">{error}</div>
         </div>
       )}
       {status && !error && (
         <div className="alert vce-mt-3" data-variant="success">
-          {status}
+          <span className="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </span>
+          <div className="alert-content">{status}</div>
         </div>
       )}
     </div>
