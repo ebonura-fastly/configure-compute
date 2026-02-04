@@ -1,6 +1,7 @@
 import { Handle, Position, NodeResizer } from '@xyflow/react'
 import { useState, type ReactNode } from 'react'
-import { Select, type SelectOptionType } from '@fastly/beacon'
+import { Box, Flex, Text, Select, Switch, TextInput, type SelectOptionType } from '@fastly/beacon'
+import { IconHelp } from '@fastly/beacon-icons'
 
 type PortDef = {
   id: string
@@ -56,7 +57,7 @@ export function NodeBase({
     : { width }
 
   return (
-    <div
+    <Box
       className="vce-node"
       data-category={category}
       data-selected={selected}
@@ -74,11 +75,16 @@ export function NodeBase({
       )}
 
       {/* Header */}
-      <div className="vce-node-header" onClick={() => setCollapsed(!collapsed)}>
-        <div className="vce-node-header-content">
-          <span className="vce-node-collapse-icon">{collapsed ? '▸' : '▾'}</span>
-          <span className="vce-node-title">{title}</span>
-        </div>
+      <Flex
+        className="vce-node-header"
+        onClick={() => setCollapsed(!collapsed)}
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <Flex alignItems="center" gap="xs">
+          <Text size="xs" className="vce-node-collapse-icon">{collapsed ? '▸' : '▾'}</Text>
+          <Text size="sm" weight="semibold" className="vce-node-title">{title}</Text>
+        </Flex>
         {docUrl && (
           <a
             href={docUrl}
@@ -88,10 +94,10 @@ export function NodeBase({
             title="View documentation"
             className="vce-node-doc-link"
           >
-            ?
+            <IconHelp width={14} height={14} />
           </a>
         )}
-      </div>
+      </Flex>
 
       {/* Handles - positioned absolutely relative to the node */}
       {inputs.map((port, idx) => (
@@ -120,38 +126,38 @@ export function NodeBase({
 
       {/* Body (collapsible) */}
       {!collapsed && (
-        <div className="vce-node-body">
+        <Box className="vce-node-body">
           {/* Port labels - rows must match handle positions */}
           {maxPorts > 0 && (
-            <div className="vce-port-rows">
+            <Flex className="vce-port-rows" justifyContent="space-between">
               {/* Left ports labels */}
-              <div className="vce-port-column vce-port-column--left">
+              <Box className="vce-port-column vce-port-column--left">
                 {inputs.map((port) => (
-                  <div key={port.id} className="vce-port-label">
+                  <Text key={port.id} size="xs" className="vce-port-label">
                     {port.label}
-                  </div>
+                  </Text>
                 ))}
-              </div>
+              </Box>
               {/* Right ports labels */}
-              <div className="vce-port-column vce-port-column--right">
+              <Box className="vce-port-column vce-port-column--right">
                 {outputs.map((port) => (
-                  <div key={port.id} className="vce-port-label">
+                  <Text key={port.id} size="xs" className="vce-port-label">
                     {port.label}
-                  </div>
+                  </Text>
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Flex>
           )}
 
           {/* Node content (form fields) */}
           {children && (
-            <div className={`vce-node-content ${maxPorts > 0 ? 'vce-node-content--with-ports' : ''}`}>
+            <Box className={`vce-node-content ${maxPorts > 0 ? 'vce-node-content--with-ports' : ''}`}>
               {children}
-            </div>
+            </Box>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -164,10 +170,12 @@ export function NodeField({
   children: ReactNode
 }) {
   return (
-    <div className="vce-node-field">
-      <label className="vce-node-field-label">{label}</label>
-      <div className="vce-node-field-input">{children}</div>
-    </div>
+    <Box className="vce-node-field" marginBottom="xs">
+      <Text as="label" size="xs" color="muted" className="vce-node-field-label">
+        {label}
+      </Text>
+      <Box className="vce-node-field-input">{children}</Box>
+    </Box>
   )
 }
 
@@ -257,13 +265,18 @@ export function NodeInput({
   type?: 'text' | 'number'
 }) {
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="vce-node-input"
-    />
+    <div
+      className="nodrag nopan vce-node-input-wrapper"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <TextInput
+        value={String(value)}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        type={type}
+        className="vce-node-input-beacon"
+      />
+    </div>
   )
 }
 
@@ -277,14 +290,19 @@ export function NodeCheckbox({
   label: string
 }) {
   return (
-    <label className="vce-node-checkbox">
-      <input
-        type="checkbox"
+    <Flex
+      alignItems="center"
+      gap="xs"
+      className="nodrag nopan vce-node-checkbox"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <Switch
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={onChange}
+        size="sm"
       />
-      <span>{label}</span>
-    </label>
+      <Text size="xs">{label}</Text>
+    </Flex>
   )
 }
 
@@ -300,17 +318,22 @@ export function NodeSection({
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div className="vce-node-section">
-      <div className="vce-node-section-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="vce-node-section-icon">{isOpen ? '▾' : '▸'}</span>
-        <span className="vce-node-section-title">{title}</span>
-      </div>
+    <Box className="vce-node-section">
+      <Flex
+        className="vce-node-section-header"
+        onClick={() => setIsOpen(!isOpen)}
+        alignItems="center"
+        gap="xs"
+      >
+        <Text size="xs" className="vce-node-section-icon">{isOpen ? '▾' : '▸'}</Text>
+        <Text size="xs" weight="semibold" className="vce-node-section-title">{title}</Text>
+      </Flex>
       {isOpen && (
-        <div className="vce-node-section-content">
+        <Box className="vce-node-section-content" paddingLeft="sm">
           {children}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -333,12 +356,17 @@ export function NodeTextarea({
   const rows = Math.min(maxRows, Math.max(minRows, lineCount, estimatedWrapLines))
 
   return (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className="vce-node-textarea"
-    />
+    <div
+      className="nodrag nopan"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="vce-node-textarea"
+      />
+    </div>
   )
 }

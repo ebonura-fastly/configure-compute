@@ -148,38 +148,45 @@
   --color-info-border: var(--color-blue-60);
 
   /* ===========================================
-   * Node Category Colors (using data-viz palette)
+   * Node Category Colors
+   * Using saturated colors that support white text
+   * (following Beacon's --COLOR--*--surface--tertiary pattern)
    * =========================================== */
 
-  /* Input nodes - pink/coral */
-  --node-input-header: var(--color-data-viz-4);
+  /* Input nodes - coral red (entry points) */
+  --node-input-header: #c75050;
+  --node-input-header-text: var(--color-gray-0);
   --node-input-body: var(--color-gray-0);
   --node-input-border: var(--color-gray-30);
   --node-input-text: var(--color-gray-80);
 
-  /* Condition nodes - light cyan */
-  --node-condition-header: var(--color-data-viz-5);
+  /* Condition nodes - teal cyan (decision points) */
+  --node-condition-header: #0088a3;
+  --node-condition-header-text: var(--color-gray-0);
   --node-condition-body: var(--color-gray-0);
   --node-condition-border: var(--color-gray-30);
   --node-condition-text: var(--color-gray-80);
 
-  /* Logic nodes - light green */
-  --node-logic-header: var(--color-data-viz-12);
+  /* Logic nodes - forest green (logical operations) */
+  --node-logic-header: #2d8a3e;
+  --node-logic-header-text: var(--color-gray-0);
   --node-logic-body: var(--color-gray-0);
   --node-logic-border: var(--color-gray-30);
   --node-logic-text: var(--color-gray-80);
 
-  /* Action nodes - purple */
-  --node-action-header: var(--color-data-viz-7);
+  /* Action nodes - purple (responses/blocks) */
+  --node-action-header: #7c4daf;
+  --node-action-header-text: var(--color-gray-0);
   --node-action-body: var(--color-gray-0);
   --node-action-border: var(--color-gray-30);
   --node-action-text: var(--color-gray-80);
 
-  /* Routing nodes - teal */
-  --node-routing-header: var(--color-data-viz-1);
+  /* Routing nodes - deep teal (backend routing) */
+  --node-routing-header: #007872;
+  --node-routing-header-text: var(--color-gray-0);
   --node-routing-body: var(--color-gray-0);
   --node-routing-border: var(--color-gray-30);
-  --node-routing-text: var(--color-gray-0);
+  --node-routing-text: var(--color-gray-80);
 
   /* Port type colors */
   --port-bool: var(--color-data-viz-7);
@@ -338,23 +345,30 @@
   --color-info-surface-hover: var(--color-blue-80);
   --color-info-border: var(--color-blue-40);
 
-  /* Node colors (adjusted for dark mode) */
+  /* Node colors (adjusted for dark mode)
+   * Headers keep category colors, use white text for contrast
+   */
+  --node-input-header-text: var(--color-gray-0);
   --node-input-body: var(--color-gray-90);
   --node-input-border: var(--color-gray-70);
   --node-input-text: var(--color-gray-10);
 
+  --node-condition-header-text: var(--color-gray-0);
   --node-condition-body: var(--color-gray-90);
   --node-condition-border: var(--color-gray-70);
   --node-condition-text: var(--color-gray-10);
 
+  --node-logic-header-text: var(--color-gray-0);
   --node-logic-body: var(--color-gray-90);
   --node-logic-border: var(--color-gray-70);
   --node-logic-text: var(--color-gray-10);
 
+  --node-action-header-text: var(--color-gray-0);
   --node-action-body: var(--color-gray-90);
   --node-action-border: var(--color-gray-70);
   --node-action-text: var(--color-gray-10);
 
+  --node-routing-header-text: var(--color-gray-0);
   --node-routing-body: var(--color-gray-90);
   --node-routing-border: var(--color-gray-70);
   --node-routing-text: var(--color-gray-0);

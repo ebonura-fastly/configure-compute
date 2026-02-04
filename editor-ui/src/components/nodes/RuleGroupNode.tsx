@@ -1,6 +1,8 @@
 import { Handle, Position, type NodeProps, useReactFlow } from '@xyflow/react'
 import { useCallback, useState } from 'react'
-import { NodeSelect } from './NodeBase'
+import { Box, Flex, Text, Pill, Button } from '@fastly/beacon'
+import { IconHelp, IconClose, IconAdd } from '@fastly/beacon-icons'
+import { NodeSelect, NodeInput } from './NodeBase'
 
 // Fields that return boolean values - show checkbox instead of text input
 const booleanFields = new Set([
@@ -175,7 +177,7 @@ export function RuleGroupNode({ id, data, selected }: NodeProps) {
             title="View documentation"
             className="vce-node-doc-link"
           >
-            ?
+            <IconHelp width={14} height={14} />
           </a>
         </div>
       </div>
@@ -235,9 +237,9 @@ export function RuleGroupNode({ id, data, selected }: NodeProps) {
       {!collapsed && (
         <div className="vce-rule-group-body">
           {/* Logic indicator */}
-          <div className="vce-rule-group-logic-hint">
+          <Text size="xs" color="muted" className="vce-rule-group-logic-hint">
             {logic === 'AND' ? 'All conditions must match' : 'Any condition must match'}
-          </div>
+          </Text>
 
           {/* Condition cards */}
           <div className="vce-rule-group-conditions">
@@ -249,7 +251,7 @@ export function RuleGroupNode({ id, data, selected }: NodeProps) {
                 {/* Logic connector between conditions */}
                 {idx > 0 && (
                   <div className="vce-rule-group-logic-connector">
-                    {logic}
+                    <Pill size="xs" variant="subtle">{logic}</Pill>
                   </div>
                 )}
 
@@ -257,96 +259,110 @@ export function RuleGroupNode({ id, data, selected }: NodeProps) {
                 <button
                   onClick={() => removeCondition(condition.id)}
                   className="vce-rule-group-condition-remove"
+                  title="Remove condition"
                 >
-                  ×
+                  <IconClose width={12} height={12} />
                 </button>
 
-                {/* Condition fields */}
-                <div className="vce-rule-group-condition-fields">
-                  <NodeSelect
-                    value={condition.field}
-                    onChange={(newField) => {
-                      // When switching to boolean field, set default values
-                      if (booleanFields.has(newField)) {
-                        updateData({
-                          conditions: conditions.map((c) =>
-                            c.id === condition.id
-                              ? { ...c, field: newField, operator: 'equals', value: 'true' }
-                              : c
-                          ),
-                        })
-                      } else {
-                        updateCondition(condition.id, 'field', newField)
-                      }
-                    }}
-                    options={fieldOptions}
-                  />
-
-                  {condition.field === 'header' && (
-                    <input
-                      type="text"
-                      value={condition.headerName || ''}
-                      onChange={(e) => {
-                        updateData({
-                          conditions: conditions.map((c) =>
-                            c.id === condition.id
-                              ? { ...c, headerName: e.target.value }
-                              : c
-                          ),
-                        })
-                      }}
-                      placeholder="Header name"
-                      className="vce-node-input vce-rule-group-header-input"
-                    />
-                  )}
-
-                  {booleanFields.has(condition.field) ? (
-                    <label className="vce-node-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={condition.value === 'true'}
-                        onChange={(e) => {
+                {/* Condition fields - row layout with labels */}
+                <Flex className="vce-rule-group-condition-fields" gap="xs" alignItems="flex-end">
+                  <Box className="vce-rule-group-field vce-rule-group-field--field">
+                    <Text size="xs" color="muted" className="vce-rule-group-field-label">Field</Text>
+                    <NodeSelect
+                      value={condition.field}
+                      onChange={(newField) => {
+                        // When switching to boolean field, set default values
+                        if (booleanFields.has(newField)) {
                           updateData({
                             conditions: conditions.map((c) =>
                               c.id === condition.id
-                                ? { ...c, operator: 'equals', value: e.target.checked ? 'true' : 'false' }
+                                ? { ...c, field: newField, operator: 'equals', value: 'true' }
+                                : c
+                            ),
+                          })
+                        } else {
+                          updateCondition(condition.id, 'field', newField)
+                        }
+                      }}
+                      options={fieldOptions}
+                    />
+                  </Box>
+
+                  {condition.field === 'header' && (
+                    <Box className="vce-rule-group-field vce-rule-group-field--header">
+                      <Text size="xs" color="muted" className="vce-rule-group-field-label">Header</Text>
+                      <NodeInput
+                        value={condition.headerName || ''}
+                        onChange={(v) => {
+                          updateData({
+                            conditions: conditions.map((c) =>
+                              c.id === condition.id
+                                ? { ...c, headerName: v }
                                 : c
                             ),
                           })
                         }}
+                        placeholder="Name"
                       />
-                      <span>{condition.value === 'true' ? 'Yes' : 'No'}</span>
-                    </label>
+                    </Box>
+                  )}
+
+                  {booleanFields.has(condition.field) ? (
+                    <Box className="vce-rule-group-field vce-rule-group-field--bool">
+                      <Text size="xs" color="muted" className="vce-rule-group-field-label">Value</Text>
+                      <label className="vce-rule-group-bool-toggle nodrag nopan">
+                        <input
+                          type="checkbox"
+                          checked={condition.value === 'true'}
+                          onChange={(e) => {
+                            updateData({
+                              conditions: conditions.map((c) =>
+                                c.id === condition.id
+                                  ? { ...c, operator: 'equals', value: e.target.checked ? 'true' : 'false' }
+                                  : c
+                              ),
+                            })
+                          }}
+                        />
+                        <span>{condition.value === 'true' ? 'Yes' : 'No'}</span>
+                      </label>
+                    </Box>
                   ) : (
                     <>
-                      <NodeSelect
-                        value={condition.operator}
-                        onChange={(v) => updateCondition(condition.id, 'operator', v)}
-                        options={operatorOptions}
-                      />
+                      <Box className="vce-rule-group-field vce-rule-group-field--operator">
+                        <Text size="xs" color="muted" className="vce-rule-group-field-label">Operator</Text>
+                        <NodeSelect
+                          value={condition.operator}
+                          onChange={(v) => updateCondition(condition.id, 'operator', v)}
+                          options={operatorOptions}
+                        />
+                      </Box>
 
-                      <input
-                        type="text"
-                        value={condition.value}
-                        onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
-                        placeholder="value"
-                        className="vce-node-input vce-rule-group-value-input"
-                      />
+                      <Box className="vce-rule-group-field vce-rule-group-field--value">
+                        <Text size="xs" color="muted" className="vce-rule-group-field-label">Value</Text>
+                        <NodeInput
+                          value={condition.value}
+                          onChange={(v) => updateCondition(condition.id, 'value', v)}
+                          placeholder="Enter value..."
+                        />
+                      </Box>
                     </>
                   )}
-                </div>
+                </Flex>
               </div>
             ))}
           </div>
 
           {/* Add condition button */}
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={addCondition}
-            className="btn w-full vce-rule-group-add-btn"
-            data-variant="dashed"
+            iconStart={<IconAdd />}
+            className="vce-rule-group-add-btn nodrag nopan"
           >
-            + Add Condition
-          </button>
+            Add Condition
+          </Button>
         </div>
       )}
     </div>

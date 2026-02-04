@@ -271,27 +271,27 @@ body {
 /* Tag colors per category */
 .vce-node-item-tag[data-category="input"] {
   --tag-bg: var(--node-input-header);
-  --tag-color: var(--node-input-text);
+  --tag-color: var(--node-input-header-text);
 }
 
 .vce-node-item-tag[data-category="condition"] {
   --tag-bg: var(--node-condition-header);
-  --tag-color: var(--node-condition-text);
+  --tag-color: var(--node-condition-header-text);
 }
 
 .vce-node-item-tag[data-category="logic"] {
   --tag-bg: var(--node-logic-header);
-  --tag-color: var(--node-logic-text);
+  --tag-color: var(--node-logic-header-text);
 }
 
 .vce-node-item-tag[data-category="action"] {
   --tag-bg: var(--node-action-header);
-  --tag-color: var(--node-action-text);
+  --tag-color: var(--node-action-header-text);
 }
 
 .vce-node-item-tag[data-category="routing"] {
   --tag-bg: var(--node-routing-header);
-  --tag-color: var(--node-routing-text);
+  --tag-color: var(--node-routing-header-text);
 }
 
 /* Description text */

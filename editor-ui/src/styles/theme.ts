@@ -33,10 +33,15 @@ function getInitialTheme(): ThemeMode {
 
 /**
  * Apply theme to document
+ * Sets data-theme on html (for our custom CSS) and
+ * data-prefers-color-scheme on body (for Beacon components)
  */
 function applyTheme(mode: ThemeMode) {
   if (typeof document !== 'undefined') {
+    // For our custom CSS variables (tokens.css)
     document.documentElement.setAttribute('data-theme', mode)
+    // For Beacon components (they check body[data-prefers-color-scheme])
+    document.body.setAttribute('data-prefers-color-scheme', mode)
   }
 }
 

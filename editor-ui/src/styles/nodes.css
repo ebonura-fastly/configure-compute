@@ -21,6 +21,7 @@
 
   /* Node category custom properties (default to input) */
   --node-header: var(--node-input-header);
+  --node-header-text: var(--node-input-header-text);
   --node-body: var(--node-input-body);
   --node-border: var(--node-input-border);
   --node-text: var(--node-input-text);
@@ -29,6 +30,7 @@
 /* Category variants */
 .vce-node[data-category="input"] {
   --node-header: var(--node-input-header);
+  --node-header-text: var(--node-input-header-text);
   --node-body: var(--node-input-body);
   --node-border: var(--node-input-border);
   --node-text: var(--node-input-text);
@@ -36,6 +38,7 @@
 
 .vce-node[data-category="condition"] {
   --node-header: var(--node-condition-header);
+  --node-header-text: var(--node-condition-header-text);
   --node-body: var(--node-condition-body);
   --node-border: var(--node-condition-border);
   --node-text: var(--node-condition-text);
@@ -43,6 +46,7 @@
 
 .vce-node[data-category="logic"] {
   --node-header: var(--node-logic-header);
+  --node-header-text: var(--node-logic-header-text);
   --node-body: var(--node-logic-body);
   --node-border: var(--node-logic-border);
   --node-text: var(--node-logic-text);
@@ -50,6 +54,7 @@
 
 .vce-node[data-category="action"] {
   --node-header: var(--node-action-header);
+  --node-header-text: var(--node-action-header-text);
   --node-body: var(--node-action-body);
   --node-border: var(--node-action-border);
   --node-text: var(--node-action-text);
@@ -57,6 +62,7 @@
 
 .vce-node[data-category="routing"] {
   --node-header: var(--node-routing-header);
+  --node-header-text: var(--node-routing-header-text);
   --node-body: var(--node-routing-body);
   --node-border: var(--node-routing-border);
   --node-text: var(--node-routing-text);
@@ -101,7 +107,7 @@
 
 .vce-node-collapse-icon {
   font-size: var(--font-size-xs);
-  color: var(--node-text);
+  color: var(--node-header-text);
   flex-shrink: 0;
 }
 
@@ -109,7 +115,7 @@
   font-weight: var(--font-weight-semibold);
   font-size: 13px;
   letter-spacing: 0.2px;
-  color: var(--node-text);
+  color: var(--node-header-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -121,6 +127,7 @@
   justify-content: center;
   width: 18px;
   height: 18px;
+  color: var(--node-header-text);
   border-radius: var(--radius-round);
   background: color-mix(in srgb, var(--node-text) 20%, transparent);
   color: var(--node-text);
@@ -470,13 +477,13 @@
   border: none;
   font-weight: var(--font-weight-semibold);
   font-size: 13px;
-  color: var(--node-text);
+  color: var(--node-header-text);
   outline: none;
   width: 140px;
 }
 
 .vce-rule-group-name-input::placeholder {
-  color: var(--node-text);
+  color: var(--node-header-text);
   opacity: 0.5;
 }
 
@@ -526,11 +533,7 @@
 
 .vce-rule-group-logic-hint {
   text-align: center;
-  font-size: var(--font-size-xs);
-  color: var(--text-disabled);
-  margin-bottom: var(--space-2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  margin-bottom: var(--space-3);
 }
 
 .vce-rule-group-conditions {
@@ -543,64 +546,222 @@
   background: var(--bg-tertiary);
   border: var(--border-width-sm) solid var(--border-primary);
   border-radius: var(--radius-md);
-  padding: var(--space-2);
+  padding: var(--space-3);
+  padding-top: var(--space-4);
   position: relative;
+  margin-top: var(--space-4);
+}
+
+.vce-rule-group-condition:first-child {
+  margin-top: 0;
+  padding-top: var(--space-3);
 }
 
 .vce-rule-group-logic-connector {
   position: absolute;
-  top: -14px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 9px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--node-text);
-  background: var(--node-body);
-  padding: 0 var(--space-1);
+  z-index: 1;
 }
 
 .vce-rule-group-condition-remove {
   position: absolute;
-  top: var(--space-1);
-  right: var(--space-1);
-  width: 16px;
-  height: 16px;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 20px;
+  height: 20px;
   border: none;
   background: transparent;
   color: var(--text-disabled);
   cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
   padding: 0;
   border-radius: var(--radius-sm);
   transition: var(--transition-efficient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .vce-rule-group-condition-remove:hover {
   color: var(--color-error);
+  background: var(--bg-hover);
 }
 
 .vce-rule-group-condition-fields {
   display: flex;
-  gap: var(--space-1);
-  align-items: center;
+  gap: var(--space-2);
+  align-items: flex-end;
   flex-wrap: wrap;
 }
 
-.vce-rule-group-condition-fields .vce-node-select,
-.vce-rule-group-condition-fields .vce-node-input {
+/* Field containers with labels */
+.vce-rule-group-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.vce-rule-group-field-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.vce-rule-group-field--field {
+  min-width: 100px;
   flex: 0 0 auto;
 }
 
-.vce-rule-group-header-input {
-  width: 80px;
+.vce-rule-group-field--operator {
+  min-width: 90px;
+  flex: 0 0 auto;
 }
 
-.vce-rule-group-value-input {
-  flex: 1 !important;
-  min-width: 80px;
+.vce-rule-group-field--value {
+  flex: 1;
+  min-width: 100px;
+}
+
+.vce-rule-group-field--header {
+  width: 80px;
+  flex: 0 0 auto;
+}
+
+.vce-rule-group-field--bool {
+  flex: 0 0 auto;
+}
+
+/* Boolean toggle styling */
+.vce-rule-group-bool-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--bg-primary);
+  border: var(--border-width-sm) solid var(--border-input);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+}
+
+.vce-rule-group-bool-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--color-action);
 }
 
 .vce-rule-group-add-btn {
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
+/* ===========================================
+ * Beacon Component Overrides (Compact Sizing)
+ * =========================================== */
+
+/* TextInput - compact size for nodes */
+.vce-node-input-wrapper {
+  width: 100%;
+}
+
+.vce-node-input-beacon {
+  width: 100%;
+}
+
+.vce-node-input-beacon input {
+  min-height: 28px !important;
+  padding: var(--space-2) var(--space-3) !important;
+  font-size: var(--font-size-xs) !important;
+}
+
+/* Switch - smaller scale for nodes */
+.vce-node-checkbox {
+  margin-top: var(--space-1);
+}
+
+.vce-node-checkbox .beacon-switch {
+  transform: scale(0.85);
+  transform-origin: left center;
+}
+
+/* Port labels - ensure proper height for Handle alignment */
+.vce-port-rows {
+  padding: var(--space-2) var(--space-4);
+}
+
+.vce-port-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.vce-port-column--right {
+  text-align: right;
+}
+
+.vce-port-label {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  line-height: 28px;
+}
+
+.vce-port-column--right .vce-port-label {
+  justify-content: flex-end;
+}
+
+/* NodeField spacing */
+.vce-node-field {
+  margin-bottom: var(--space-3);
+}
+
+.vce-node-field:last-child {
+  margin-bottom: 0;
+}
+
+.vce-node-field-label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+/* NodeSection styling */
+.vce-node-section {
   margin-top: var(--space-2);
+  border-top: var(--border-width-sm) solid var(--node-border);
+  padding-top: var(--space-2);
+}
+
+.vce-node-section:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.vce-node-section-header {
+  cursor: pointer;
+  padding: var(--space-1) 0;
+}
+
+.vce-node-section-icon {
+  opacity: 0.6;
+}
+
+.vce-node-section-title {
+  color: var(--text-secondary);
+}
+
+.vce-node-section-content {
+  margin-top: var(--space-2);
+}
+
+/* Beacon Text color inheritance for node headers */
+.vce-node-header .beacon-text {
+  color: var(--node-header-text);
+}
+
+/* Beacon Box needs position relative for Handle positioning */
+.vce-node {
+  position: relative;
 }
