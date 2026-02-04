@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { Node, Edge } from '@xyflow/react'
 import {
   Button,
@@ -10,6 +10,8 @@ import {
   Alert,
   Pill,
   LoadingIndicator,
+  PopOver,
+  Checkbox,
 } from '@fastly/beacon'
 import type { SelectOptionType } from '@fastly/beacon'
 import { allTemplates, templatesByCategory, instantiateTemplate, type RuleTemplate } from '../templates'
@@ -93,13 +95,14 @@ const categoryLabels: Record<string, string> = {
   geo: 'Geo Blocking',
   bot: 'Bot Protection',
   'access-control': 'Access Control',
+  routing: 'Routing',
 }
 
 export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>('fastly')
 
   // Templates state
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
 
   // Fastly connection state - lifted up to persist across tab switches
@@ -134,15 +137,19 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarPro
     onAddTemplate(templateNodes, templateEdges)
   }
 
-  const filteredTemplates = searchQuery
-    ? allTemplates.filter(t =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : selectedCategory
-      ? templatesByCategory[selectedCategory as keyof typeof templatesByCategory]
-      : allTemplates
+  // Filter templates by search query and/or selected categories
+  const filteredTemplates = allTemplates.filter(t => {
+    // Apply search filter
+    const matchesSearch = !searchQuery ||
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    // Apply category filter (OR logic - match any selected category)
+    const matchesCategory = selectedCategories.size === 0 || selectedCategories.has(t.category)
+
+    return matchesSearch && matchesCategory
+  })
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'fastly', label: 'Services' },
@@ -178,8 +185,8 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarPro
           <TemplatesTab
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
+            selectedCategories={selectedCategories}
+            setSelectedCategories={setSelectedCategories}
             filteredTemplates={filteredTemplates}
             onAddTemplate={handleAddTemplate}
           />
@@ -247,79 +254,168 @@ function ComponentsTab({
 function TemplatesTab({
   searchQuery,
   setSearchQuery,
-  selectedCategory,
-  setSelectedCategory,
+  selectedCategories,
+  setSelectedCategories,
   filteredTemplates,
   onAddTemplate,
 }: {
   searchQuery: string
   setSearchQuery: (q: string) => void
-  selectedCategory: string | null
-  setSelectedCategory: (c: string | null) => void
+  selectedCategories: Set<string>
+  setSelectedCategories: (c: Set<string>) => void
   filteredTemplates: RuleTemplate[]
   onAddTemplate: (template: RuleTemplate) => void
 }) {
-  return (
-    <Box>
-      {/* Search */}
-      <Box marginBottom="sm">
-        <TextInput
-          placeholder="Search templates..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value)
-            setSelectedCategory(null)
-          }}
-        />
-      </Box>
+  const [filterOpen, setFilterOpen] = useState(false)
+  const filterButtonRef = useRef<HTMLButtonElement>(null)
 
-      {/* Category Tabs */}
-      <Flex style={{ gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-        <Pill
-          onClick={() => { setSelectedCategory(null); setSearchQuery('') }}
-          status={selectedCategory === null && !searchQuery ? 'info' : undefined}
-          style={{ cursor: 'pointer' }}
+  const activeFilterCount = selectedCategories.size
+
+  const toggleCategory = (key: string) => {
+    const newSet = new Set(selectedCategories)
+    if (newSet.has(key)) {
+      newSet.delete(key)
+    } else {
+      newSet.add(key)
+    }
+    setSelectedCategories(newSet)
+  }
+
+  const clearFilters = () => {
+    setSelectedCategories(new Set())
+    setSearchQuery('')
+  }
+
+  return (
+    <Box className="vce-templates-tab">
+      {/* Search with Filter Icon */}
+      <div className="vce-search-filter-row">
+        <div className="vce-search-wrapper">
+          <svg className="vce-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            className="vce-search-input"
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="vce-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <PopOver
+          active={filterOpen}
+          attach="bottom-end"
+          portal
+          onClose={() => setFilterOpen(false)}
+          content={
+            <Box className="vce-filter-popover" padding="sm">
+              <div className="vce-filter-header">
+                <Text size="sm" style={{ fontWeight: 600 }}>Filter by Category</Text>
+                {activeFilterCount > 0 && (
+                  <button className="vce-filter-clear" onClick={clearFilters}>
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="vce-filter-options">
+                {Object.entries(categoryLabels).map(([key, label]) => (
+                  <label key={key} className="vce-filter-option">
+                    <Checkbox
+                      name={`filter-${key}`}
+                      value={key}
+                      checked={selectedCategories.has(key)}
+                      onChange={() => toggleCategory(key)}
+                      label={label}
+                    />
+                  </label>
+                ))}
+              </div>
+            </Box>
+          }
         >
-          All
-        </Pill>
-        {Object.entries(categoryLabels).map(([key, label]) => (
-          <Pill
-            key={key}
-            onClick={() => { setSelectedCategory(key); setSearchQuery('') }}
-            status={selectedCategory === key ? 'info' : undefined}
-            style={{ cursor: 'pointer' }}
+          <button
+            ref={filterButtonRef}
+            className="vce-filter-button"
+            data-active={filterOpen || activeFilterCount > 0}
+            onClick={() => setFilterOpen(!filterOpen)}
+            aria-label="Filter templates"
           >
-            {label}
-          </Pill>
-        ))}
-      </Flex>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            {activeFilterCount > 0 && (
+              <span className="vce-filter-badge">{activeFilterCount}</span>
+            )}
+          </button>
+        </PopOver>
+      </div>
+
+      {/* Active Filters Display */}
+      {activeFilterCount > 0 && (
+        <div className="vce-active-filters">
+          {Array.from(selectedCategories).map((key) => (
+            <span key={key} className="vce-active-filter-tag">
+              {categoryLabels[key]}
+              <button onClick={() => toggleCategory(key)} aria-label={`Remove ${categoryLabels[key]} filter`}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Templates List */}
-      <Box className="vce-templates-list">
+      <div className="vce-templates-list">
         {filteredTemplates.map((template) => (
-          <Box
+          <div
             key={template.id}
             className="vce-template-card"
             onClick={() => onAddTemplate(template)}
-            padding="sm"
-            marginBottom="sm"
-            style={{ cursor: 'pointer', border: '1px solid var(--color-border)', borderRadius: '6px' }}
           >
-            <Text size="sm" style={{ fontWeight: 600 }}>{template.name}</Text>
-            <Text size="xs" color="muted" style={{ marginTop: '4px' }}>{template.description}</Text>
-            <Flex style={{ gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
-              {template.tags.slice(0, 3).map((tag) => (
-                <Pill key={tag} size="sm">{tag}</Pill>
-              ))}
-            </Flex>
-          </Box>
+            <div className="vce-template-header">
+              <span className="vce-template-name">{template.name}</span>
+              <span className="vce-template-category">{categoryLabels[template.category] || template.category}</span>
+            </div>
+            <span className="vce-template-description">{template.description}</span>
+            {template.tags.length > 0 && (
+              <div className="vce-template-tags">
+                {template.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="vce-template-tag">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
         {filteredTemplates.length === 0 && (
-          <Box padding="lg" style={{ textAlign: 'center' }}>
-            <Text color="muted">No templates found</Text>
-          </Box>
+          <div className="vce-templates-empty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <Text size="sm" color="muted">No templates found</Text>
+            {(searchQuery || activeFilterCount > 0) && (
+              <button className="vce-templates-reset" onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
+          </div>
         )}
-      </Box>
+      </div>
     </Box>
   )
 }
