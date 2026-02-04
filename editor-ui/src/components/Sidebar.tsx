@@ -23,7 +23,7 @@ type SidebarProps = {
 
 type Tab = 'components' | 'templates' | 'fastly'
 
-// Node types with categories
+// Node types with categories (must match the actual node component categories)
 const nodeTypes = [
   {
     type: 'request',
@@ -40,7 +40,7 @@ const nodeTypes = [
   {
     type: 'ruleGroup',
     label: 'Rule Group',
-    category: 'condition' as const,
+    category: 'logic' as const,
     description: 'Multiple conditions with AND/OR',
   },
   {
@@ -200,10 +200,12 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules }: SidebarPro
   )
 }
 
+type NodeCategory = 'input' | 'condition' | 'logic' | 'action' | 'routing'
+
 type NodeTypeDef = {
   type: string
   label: string
-  category: 'input' | 'condition' | 'logic' | 'action' | 'routing'
+  category: NodeCategory
   description: string
 }
 
@@ -216,31 +218,27 @@ function ComponentsTab({
   onDragStart: (event: React.DragEvent, nodeType: string) => void
 }) {
   return (
-    <Box>
-      <Box className="vce-node-list">
+    <Box className="vce-components-tab">
+      <div className="vce-node-list">
         {nodeTypes.map(({ type, label, category, description }) => (
-          <Box
+          <div
             key={type}
             draggable
             onDragStart={(e) => onDragStart(e, type)}
             className="vce-node-item"
             data-category={category}
-            padding="sm"
-            marginBottom="xs"
-            style={{ cursor: 'grab', border: '1px solid var(--color-border)', borderRadius: '6px' }}
           >
-            <Flex style={{ alignItems: 'center', gap: '8px' }}>
-              <Pill size="sm" className="vce-node-item-tag" data-category={category}>
-                {label}
-              </Pill>
-              <Text size="xs" color="muted">{description}</Text>
-            </Flex>
-          </Box>
+            <div className="vce-node-item-header">
+              <span className="vce-node-item-title">{label}</span>
+              <span className="vce-node-item-category">{category}</span>
+            </div>
+            <span className="vce-node-item-description">{description}</span>
+          </div>
         ))}
-      </Box>
-      <Text size="xs" color="muted" style={{ textAlign: 'center', marginTop: '12px' }}>
+      </div>
+      <div className="vce-sidebar-hint">
         Drag components onto the canvas
-      </Text>
+      </div>
     </Box>
   )
 }

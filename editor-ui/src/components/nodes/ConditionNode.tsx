@@ -120,6 +120,7 @@ const operatorOptions = [
 
   // IP operators
   { value: 'inCidr', label: 'in CIDR' },
+  { value: 'notInCidr', label: 'not in CIDR' },
 
   // Existence operators
   { value: 'exists', label: 'exists' },

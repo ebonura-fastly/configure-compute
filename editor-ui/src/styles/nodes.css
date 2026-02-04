@@ -488,14 +488,34 @@
 }
 
 .vce-rule-group-logic-select {
-  padding: var(--space-1) var(--space-2);
-  background: var(--bg-tertiary);
-  border: var(--border-width-sm) solid var(--node-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 11px;
-  font-weight: var(--font-weight-semibold);
+  /* Remove wrapper styling - let the Select control handle it */
+}
+
+/* Style the Select control in the header to blend with the colored background */
+.vce-rule-group-logic-select .vce-select__control {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  min-height: 26px;
   cursor: pointer;
+}
+
+.vce-rule-group-logic-select .vce-select__control:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.vce-rule-group-logic-select .vce-select__single-value {
+  color: var(--node-header-text);
+  font-weight: var(--font-weight-semibold);
+  font-size: 12px;
+}
+
+.vce-rule-group-logic-select .vce-select__indicator {
+  color: var(--node-header-text);
+  padding: 4px;
+}
+
+.vce-rule-group-logic-select .vce-select__indicator-separator {
+  display: none;
 }
 
 .vce-rule-group-ports {
@@ -764,4 +784,56 @@
 /* Beacon Box needs position relative for Handle positioning */
 .vce-node {
   position: relative;
+}
+
+/* ===========================================
+ * Select Dropdown Dark Mode Styles
+ * (react-select with classNamePrefix="vce-select")
+ * =========================================== */
+
+[data-theme="dark"] .vce-select__control {
+  background: var(--bg-secondary);
+  border-color: var(--border-input);
+}
+
+[data-theme="dark"] .vce-select__control:hover {
+  border-color: var(--border-input-hover);
+}
+
+[data-theme="dark"] .vce-select__single-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .vce-select__indicator {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .vce-select__menu {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="dark"] .vce-select__option {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .vce-select__option:hover,
+[data-theme="dark"] .vce-select__option--is-focused {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .vce-select__option--is-selected {
+  background: var(--color-action);
+  color: var(--text-inverse);
+}
+
+[data-theme="dark"] .vce-select__input-container,
+[data-theme="dark"] .vce-select__input {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .vce-select__placeholder {
+  color: var(--text-disabled);
 }

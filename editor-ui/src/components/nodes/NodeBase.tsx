@@ -197,6 +197,8 @@ export function NodeSelect({
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onFocus={(e) => e.stopPropagation()}
     >
       <Select
         value={selectedOption}
@@ -210,6 +212,7 @@ export function NodeSelect({
         menuPosition="fixed"
         menuShouldBlockScroll={true}
         blurInputOnSelect={true}
+        isSearchable={false}
         classNamePrefix="vce-select"
         className="vce-node-select-beacon"
         styles={{

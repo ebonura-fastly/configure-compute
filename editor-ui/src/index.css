@@ -133,55 +133,85 @@ body {
 
 /* ===========================================
  * Draggable Node Items (in sidebar)
- * Based on Uniform fui-card pattern with left border accent
+ * Inspired by aps-tf-service-builder-gui feature cards
  * =========================================== */
 
 .vce-node-item {
   --accent-color: var(--border-primary);
 
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-secondary);
-  border: var(--border-width-sm) solid var(--border-primary);
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  padding-left: calc(var(--space-3) + 3px);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
   border-left: 3px solid var(--accent-color);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   cursor: grab;
-  transition: var(--transition-practical);
+  transition: all 0.15s ease;
 }
 
 .vce-node-item:hover {
-  background: var(--bg-primary);
-  border-color: var(--border-primary-hover);
+  border-color: var(--border-secondary);
   border-left-color: var(--accent-color);
-  box-shadow: var(--shadow-md);
+  background: var(--bg-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.vce-node-item:active {
+.vce-node-item:active,
+.vce-node-item.dragging {
   cursor: grabbing;
-  box-shadow: var(--shadow-sm);
+  opacity: 0.7;
+  transform: scale(0.98);
 }
 
-/* Category accent colors (left border) */
+/* Top row: title and category pill */
+.vce-node-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.vce-node-item-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Category accent colors (for left border and badge) */
 .vce-node-item[data-category="input"] {
   --accent-color: var(--node-input-header);
+  --accent-surface: var(--node-input-surface);
+  --accent-surface-text: var(--node-input-surface-text);
 }
 
 .vce-node-item[data-category="condition"] {
   --accent-color: var(--node-condition-header);
+  --accent-surface: var(--node-condition-surface);
+  --accent-surface-text: var(--node-condition-surface-text);
 }
 
 .vce-node-item[data-category="logic"] {
   --accent-color: var(--node-logic-header);
+  --accent-surface: var(--node-logic-surface);
+  --accent-surface-text: var(--node-logic-surface-text);
 }
 
 .vce-node-item[data-category="action"] {
   --accent-color: var(--node-action-header);
+  --accent-surface: var(--node-action-surface);
+  --accent-surface-text: var(--node-action-surface-text);
 }
 
 .vce-node-item[data-category="routing"] {
   --accent-color: var(--node-routing-header);
+  --accent-surface: var(--node-routing-surface);
+  --accent-surface-text: var(--node-routing-surface-text);
 }
 
 /* ===========================================
@@ -251,54 +281,26 @@ body {
   overflow-y: auto;
 }
 
-/* Component name tag (Uniform fui-tag pattern) */
-.vce-node-item-tag {
-  --tag-bg: var(--bg-tertiary);
-  --tag-color: var(--text-primary);
-
+/* Category pill - light/subtle variant (Uniform pattern) */
+.vce-node-item-category {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-1) var(--space-3);
-  background: var(--tag-bg);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--tag-color);
-  white-space: nowrap;
+  padding: 2px 8px;
+  background: var(--accent-surface);
+  color: var(--accent-surface-text);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   flex-shrink: 0;
-}
-
-/* Tag colors per category */
-.vce-node-item-tag[data-category="input"] {
-  --tag-bg: var(--node-input-header);
-  --tag-color: var(--node-input-header-text);
-}
-
-.vce-node-item-tag[data-category="condition"] {
-  --tag-bg: var(--node-condition-header);
-  --tag-color: var(--node-condition-header-text);
-}
-
-.vce-node-item-tag[data-category="logic"] {
-  --tag-bg: var(--node-logic-header);
-  --tag-color: var(--node-logic-header-text);
-}
-
-.vce-node-item-tag[data-category="action"] {
-  --tag-bg: var(--node-action-header);
-  --tag-color: var(--node-action-header-text);
-}
-
-.vce-node-item-tag[data-category="routing"] {
-  --tag-bg: var(--node-routing-header);
-  --tag-color: var(--node-routing-header-text);
 }
 
 /* Description text */
 .vce-node-item-description {
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   color: var(--text-secondary);
-  flex: 1;
+  line-height: 1.35;
 }
 
 /* Templates Tab */

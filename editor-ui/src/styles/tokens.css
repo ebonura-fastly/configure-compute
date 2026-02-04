@@ -156,6 +156,8 @@
   /* Input nodes - coral red (entry points) */
   --node-input-header: #c75050;
   --node-input-header-text: var(--color-gray-0);
+  --node-input-surface: #fef1f1;
+  --node-input-surface-text: #a33a3a;
   --node-input-body: var(--color-gray-0);
   --node-input-border: var(--color-gray-30);
   --node-input-text: var(--color-gray-80);
@@ -163,6 +165,8 @@
   /* Condition nodes - teal cyan (decision points) */
   --node-condition-header: #0088a3;
   --node-condition-header-text: var(--color-gray-0);
+  --node-condition-surface: #e6f7fa;
+  --node-condition-surface-text: #006d83;
   --node-condition-body: var(--color-gray-0);
   --node-condition-border: var(--color-gray-30);
   --node-condition-text: var(--color-gray-80);
@@ -170,6 +174,8 @@
   /* Logic nodes - forest green (logical operations) */
   --node-logic-header: #2d8a3e;
   --node-logic-header-text: var(--color-gray-0);
+  --node-logic-surface: #f0faf2;
+  --node-logic-surface-text: #1f6a2d;
   --node-logic-body: var(--color-gray-0);
   --node-logic-border: var(--color-gray-30);
   --node-logic-text: var(--color-gray-80);
@@ -177,6 +183,8 @@
   /* Action nodes - purple (responses/blocks) */
   --node-action-header: #7c4daf;
   --node-action-header-text: var(--color-gray-0);
+  --node-action-surface: #f5f0fa;
+  --node-action-surface-text: #5c3a82;
   --node-action-body: var(--color-gray-0);
   --node-action-border: var(--color-gray-30);
   --node-action-text: var(--color-gray-80);
@@ -184,6 +192,8 @@
   /* Routing nodes - deep teal (backend routing) */
   --node-routing-header: #007872;
   --node-routing-header-text: var(--color-gray-0);
+  --node-routing-surface: #e6f5f4;
+  --node-routing-surface-text: #005c57;
   --node-routing-body: var(--color-gray-0);
   --node-routing-border: var(--color-gray-30);
   --node-routing-text: var(--color-gray-80);
@@ -347,28 +357,39 @@
 
   /* Node colors (adjusted for dark mode)
    * Headers keep category colors, use white text for contrast
+   * Surface colors are darker tints for badges
    */
   --node-input-header-text: var(--color-gray-0);
+  --node-input-surface: #3d2020;
+  --node-input-surface-text: #f5a8a8;
   --node-input-body: var(--color-gray-90);
   --node-input-border: var(--color-gray-70);
   --node-input-text: var(--color-gray-10);
 
   --node-condition-header-text: var(--color-gray-0);
+  --node-condition-surface: #1a3a40;
+  --node-condition-surface-text: #7fd4e6;
   --node-condition-body: var(--color-gray-90);
   --node-condition-border: var(--color-gray-70);
   --node-condition-text: var(--color-gray-10);
 
   --node-logic-header-text: var(--color-gray-0);
+  --node-logic-surface: #1a3320;
+  --node-logic-surface-text: #8fd4a0;
   --node-logic-body: var(--color-gray-90);
   --node-logic-border: var(--color-gray-70);
   --node-logic-text: var(--color-gray-10);
 
   --node-action-header-text: var(--color-gray-0);
+  --node-action-surface: #2d2040;
+  --node-action-surface-text: #c4a8e8;
   --node-action-body: var(--color-gray-90);
   --node-action-border: var(--color-gray-70);
   --node-action-text: var(--color-gray-10);
 
   --node-routing-header-text: var(--color-gray-0);
+  --node-routing-surface: #1a3533;
+  --node-routing-surface-text: #7fd4d0;
   --node-routing-body: var(--color-gray-90);
   --node-routing-border: var(--color-gray-70);
   --node-routing-text: var(--color-gray-0);
