@@ -14,12 +14,7 @@ export function RequestNode({ selected }: NodeProps) {
       width={140}
       docUrl="https://docs.fastly.com/en/guides/compute/"
     >
-      <div style={{
-        fontSize: 10,
-        color: '#808080',
-        textAlign: 'center',
-        padding: '4px 0',
-      }}>
+      <div className="vce-node-subtitle">
         Entry point
       </div>
     </NodeBase>

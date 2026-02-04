@@ -817,3 +817,58 @@
 .btn[data-variant="dashed"]:hover:not(:disabled) {
   background: var(--color-action-surface);
 }
+
+/* ===========================================
+ * Node Editor Panel
+ * =========================================== */
+
+.vce-node-editor {
+  position: absolute;
+  right: var(--space-4);
+  top: var(--space-4);
+  width: 250px;
+  background: var(--bg-secondary);
+  border: var(--border-width-sm) solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+  z-index: 10;
+}
+
+.vce-node-editor-header {
+  padding: var(--space-4);
+  border-bottom: var(--border-width-sm) solid var(--border-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+.vce-node-editor-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.vce-node-editor-close:hover {
+  color: var(--text-primary);
+}
+
+.vce-node-editor-form {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vce-node-editor-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}

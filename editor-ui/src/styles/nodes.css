@@ -231,6 +231,13 @@
   border-top: var(--border-width-sm) solid var(--node-border);
 }
 
+.vce-node-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-disabled);
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+
 /* ===========================================
  * Node Form Elements (inside nodes)
  * =========================================== */
