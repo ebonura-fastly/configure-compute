@@ -214,12 +214,10 @@ function ComponentsTab({
             className="vce-node-item"
             data-category={category}
           >
-            <div className="vce-node-item-header" data-category={category}>
+            <span className="vce-node-item-tag" data-category={category}>
               {label}
-            </div>
-            <div className="vce-node-item-body" data-category={category}>
-              <span className="vce-node-item-description">{description}</span>
-            </div>
+            </span>
+            <span className="vce-node-item-description">{description}</span>
           </div>
         ))}
       </div>

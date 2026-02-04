@@ -103,57 +103,55 @@ body {
 
 /* ===========================================
  * Draggable Node Items (in sidebar)
+ * Based on Uniform fui-card pattern with left border accent
  * =========================================== */
 
 .vce-node-item {
+  --accent-color: var(--border-primary);
+
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
-  margin-bottom: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   background: var(--bg-secondary);
   border: var(--border-width-sm) solid var(--border-primary);
+  border-left: 3px solid var(--accent-color);
   border-radius: var(--radius-md);
   cursor: grab;
   transition: var(--transition-practical);
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
 }
 
 .vce-node-item:hover {
-  background: var(--bg-hover);
+  background: var(--bg-primary);
   border-color: var(--border-primary-hover);
+  border-left-color: var(--accent-color);
+  box-shadow: var(--shadow-md);
 }
 
 .vce-node-item:active {
   cursor: grabbing;
+  box-shadow: var(--shadow-sm);
 }
 
-.vce-node-item-icon {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-round);
-  flex-shrink: 0;
+/* Category accent colors (left border) */
+.vce-node-item[data-category="input"] {
+  --accent-color: var(--node-input-header);
 }
 
-.vce-node-item-icon[data-category="input"] {
-  background: var(--node-input-header);
+.vce-node-item[data-category="condition"] {
+  --accent-color: var(--node-condition-header);
 }
 
-.vce-node-item-icon[data-category="condition"] {
-  background: var(--node-condition-header);
+.vce-node-item[data-category="logic"] {
+  --accent-color: var(--node-logic-header);
 }
 
-.vce-node-item-icon[data-category="logic"] {
-  background: var(--node-logic-header);
+.vce-node-item[data-category="action"] {
+  --accent-color: var(--node-action-header);
 }
 
-.vce-node-item-icon[data-category="action"] {
-  background: var(--node-action-header);
-}
-
-.vce-node-item-icon[data-category="routing"] {
-  background: var(--node-routing-header);
+.vce-node-item[data-category="routing"] {
+  --accent-color: var(--node-routing-header);
 }
 
 /* ===========================================
@@ -223,64 +221,54 @@ body {
   overflow-y: auto;
 }
 
-.vce-node-item-header {
-  padding: var(--space-2) var(--space-3);
+/* Component name tag (Uniform fui-tag pattern) */
+.vce-node-item-tag {
+  --tag-bg: var(--bg-tertiary);
+  --tag-color: var(--text-primary);
+
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  background: var(--tag-bg);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
+  color: var(--tag-color);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.vce-node-item-header[data-category="input"] {
-  background: var(--node-input-header);
-  color: var(--node-input-text);
+/* Tag colors per category */
+.vce-node-item-tag[data-category="input"] {
+  --tag-bg: var(--node-input-header);
+  --tag-color: var(--node-input-text);
 }
 
-.vce-node-item-header[data-category="condition"] {
-  background: var(--node-condition-header);
-  color: var(--node-condition-text);
+.vce-node-item-tag[data-category="condition"] {
+  --tag-bg: var(--node-condition-header);
+  --tag-color: var(--node-condition-text);
 }
 
-.vce-node-item-header[data-category="logic"] {
-  background: var(--node-logic-header);
-  color: var(--node-logic-text);
+.vce-node-item-tag[data-category="logic"] {
+  --tag-bg: var(--node-logic-header);
+  --tag-color: var(--node-logic-text);
 }
 
-.vce-node-item-header[data-category="action"] {
-  background: var(--node-action-header);
-  color: var(--node-action-text);
+.vce-node-item-tag[data-category="action"] {
+  --tag-bg: var(--node-action-header);
+  --tag-color: var(--node-action-text);
 }
 
-.vce-node-item-header[data-category="routing"] {
-  background: var(--node-routing-header);
-  color: var(--node-routing-text);
+.vce-node-item-tag[data-category="routing"] {
+  --tag-bg: var(--node-routing-header);
+  --tag-color: var(--node-routing-text);
 }
 
-.vce-node-item-body {
-  padding: var(--space-2) var(--space-3);
-}
-
-.vce-node-item-body[data-category="input"] {
-  background: var(--node-input-body);
-}
-
-.vce-node-item-body[data-category="condition"] {
-  background: var(--node-condition-body);
-}
-
-.vce-node-item-body[data-category="logic"] {
-  background: var(--node-logic-body);
-}
-
-.vce-node-item-body[data-category="action"] {
-  background: var(--node-action-body);
-}
-
-.vce-node-item-body[data-category="routing"] {
-  background: var(--node-routing-body);
-}
-
+/* Description text */
 .vce-node-item-description {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+  flex: 1;
 }
 
 /* Templates Tab */
