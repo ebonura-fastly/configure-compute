@@ -182,6 +182,36 @@ function Flow() {
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
             <Controls />
           </ReactFlow>
+
+          {/* Empty Canvas State */}
+          {nodes.length === 0 && (
+            <div className="vce-empty-canvas">
+              <div className="vce-empty-canvas-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <h2 className="vce-empty-canvas-title">Start Building Your Security Rules</h2>
+              <p className="vce-empty-canvas-text">
+                Drag components from the sidebar onto the canvas,<br />
+                or use a template to get started quickly.
+              </p>
+              <div className="vce-empty-canvas-hints">
+                <div className="vce-empty-canvas-hint">
+                  <span className="vce-empty-canvas-hint-icon">1</span>
+                  <span>Add a <strong>Request</strong> node as your entry point</span>
+                </div>
+                <div className="vce-empty-canvas-hint">
+                  <span className="vce-empty-canvas-hint-icon">2</span>
+                  <span>Connect <strong>Conditions</strong> to check request fields</span>
+                </div>
+                <div className="vce-empty-canvas-hint">
+                  <span className="vce-empty-canvas-hint-icon">3</span>
+                  <span>Add <strong>Actions</strong> to block, allow, or route traffic</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
