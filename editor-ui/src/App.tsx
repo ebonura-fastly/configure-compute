@@ -78,7 +78,7 @@ function Flow() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const { screenToFlowPosition } = useReactFlow()
-  const { theme, isDark, toggle } = useTheme()
+  const { isDark, toggle } = useTheme()
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
