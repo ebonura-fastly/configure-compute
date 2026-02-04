@@ -1942,6 +1942,7 @@ function FastlyTab({
         if (!service) return null
         const serviceUrl = `https://${generateDomainName(service.name)}`
         return (
+          <>
           {/* Service Info Card */}
           <div className="fui-info-card vce-mb-3">
             <div className="fui-info-card__header">
@@ -2068,6 +2069,7 @@ function FastlyTab({
               )}
             </div>
           </div>
+          </>
         )
       })()}
 
