@@ -138,14 +138,16 @@ function Flow() {
       {/* Header */}
       <header className="vce-header">
         <span className="vce-header-title">Visual Compute Engine</span>
-        <button
-          onClick={toggle}
-          className="btn"
-          data-variant="secondary"
-          title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-        >
-          {isDark ? 'Light' : 'Dark'}
-        </button>
+        <label className="vce-switch-label" title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
+          <span>Light</span>
+          <input
+            type="checkbox"
+            className="vce-switch"
+            checked={isDark}
+            onChange={toggle}
+          />
+          <span>Dark</span>
+        </label>
       </header>
 
       {/* Main Content */}
@@ -197,18 +199,27 @@ function Flow() {
                 Drag components from the sidebar onto the canvas,<br />
                 or use a template to get started quickly.
               </p>
-              <div className="vce-empty-canvas-hints">
-                <div className="vce-empty-canvas-hint">
-                  <span className="vce-empty-canvas-hint-icon">1</span>
-                  <span>Add a <strong>Request</strong> node as your entry point</span>
+              <div className="vce-quick-guide">
+                <div className="vce-quick-guide-step">
+                  <span className="vce-quick-guide-number">1</span>
+                  <div className="vce-quick-guide-content">
+                    <h3 className="vce-quick-guide-title">Add a Request Node</h3>
+                    <p className="vce-quick-guide-desc">Start with a Request node as your entry point. This captures incoming traffic.</p>
+                  </div>
                 </div>
-                <div className="vce-empty-canvas-hint">
-                  <span className="vce-empty-canvas-hint-icon">2</span>
-                  <span>Connect <strong>Conditions</strong> to check request fields</span>
+                <div className="vce-quick-guide-step">
+                  <span className="vce-quick-guide-number">2</span>
+                  <div className="vce-quick-guide-content">
+                    <h3 className="vce-quick-guide-title">Add Conditions</h3>
+                    <p className="vce-quick-guide-desc">Connect Condition nodes to inspect request fields like path, headers, or IP.</p>
+                  </div>
                 </div>
-                <div className="vce-empty-canvas-hint">
-                  <span className="vce-empty-canvas-hint-icon">3</span>
-                  <span>Add <strong>Actions</strong> to block, allow, or route traffic</span>
+                <div className="vce-quick-guide-step">
+                  <span className="vce-quick-guide-number">3</span>
+                  <div className="vce-quick-guide-content">
+                    <h3 className="vce-quick-guide-title">Define Actions</h3>
+                    <p className="vce-quick-guide-desc">Add Action nodes to block, allow, rate-limit, or route traffic to backends.</p>
+                  </div>
                 </div>
               </div>
             </div>

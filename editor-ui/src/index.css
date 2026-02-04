@@ -539,44 +539,6 @@ body {
   margin: 0 0 var(--space-6) 0;
 }
 
-.vce-empty-canvas-hints {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  text-align: left;
-  background: var(--bg-secondary);
-  border: var(--border-width-sm) solid var(--border-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-}
-
-.vce-empty-canvas-hint {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-.vce-empty-canvas-hint-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-round);
-  background: var(--color-action-surface);
-  color: var(--color-action);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  flex-shrink: 0;
-}
-
-.vce-empty-canvas-hint strong {
-  color: var(--text-primary);
-  font-weight: var(--font-weight-semibold);
-}
-
 /* ===========================================
  * Panel Components (Test & Deploy)
  * =========================================== */

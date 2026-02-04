@@ -156,6 +156,144 @@
 }
 
 /* ===========================================
+ * Toggle Switch (Uniform fui-switch pattern)
+ * =========================================== */
+
+.vce-switch {
+  --switch-height: 22px;
+  --switch-width: 38px;
+  --toggle-padding: 2px;
+  --toggle-size: calc(var(--switch-height) - (var(--toggle-padding) * 2));
+
+  appearance: none;
+  cursor: pointer;
+  display: inline-block;
+  height: var(--switch-height);
+  width: var(--switch-width);
+  position: relative;
+  border: none;
+  background: transparent;
+}
+
+.vce-switch::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--switch-width);
+  height: var(--switch-height);
+  background: var(--bg-tertiary);
+  border-radius: var(--switch-height);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: var(--transition-practical);
+}
+
+.vce-switch::after {
+  content: '';
+  position: absolute;
+  top: var(--toggle-padding);
+  left: var(--toggle-padding);
+  width: var(--toggle-size);
+  height: var(--toggle-size);
+  background: var(--bg-primary);
+  border-radius: var(--toggle-size);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-practical);
+}
+
+.vce-switch:checked::before {
+  background: var(--color-action);
+}
+
+.vce-switch:checked::after {
+  left: calc(var(--switch-width) - var(--toggle-size) - var(--toggle-padding));
+}
+
+.vce-switch:hover::after {
+  box-shadow: var(--shadow-md);
+}
+
+.vce-switch:focus-visible {
+  outline: none;
+}
+
+.vce-switch:focus-visible::before {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), var(--focus-ring);
+}
+
+/* Switch with label */
+.vce-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+/* ===========================================
+ * Meter Bar (Uniform fui-meter-bar pattern)
+ * Shows value with color feedback (green/yellow/red)
+ * =========================================== */
+
+/* Meter section container */
+.vce-meter-section {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width-sm) solid var(--border-primary);
+}
+
+.vce-meter-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.vce-meter-label span:last-child {
+  font-weight: var(--font-weight-semibold);
+}
+
+.vce-meter {
+  --meter-height: 6px;
+  --meter-radius: 9999px;
+
+  width: 100%;
+  height: var(--meter-height);
+  background: var(--bg-tertiary);
+  border-radius: var(--meter-radius);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.vce-meter-fill {
+  height: 100%;
+  border-radius: var(--meter-radius);
+  transition: width var(--transition-practical), background var(--transition-practical);
+}
+
+/* Meter states based on percentage */
+.vce-meter-fill[data-state="success"] {
+  background: var(--color-success);
+}
+
+.vce-meter-fill[data-state="warning"] {
+  background: var(--color-warning);
+}
+
+.vce-meter-fill[data-state="error"] {
+  background: var(--color-error);
+}
+
+.vce-meter-hint {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--text-disabled);
+  font-style: italic;
+}
+
+/* ===========================================
  * Form Elements
  * =========================================== */
 
@@ -503,6 +641,67 @@
 }
 
 /* ===========================================
+ * Quick Guide (Uniform fui-quick-guide pattern)
+ * =========================================== */
+
+.vce-quick-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 400px;
+  text-align: left;
+}
+
+.vce-quick-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border: var(--border-width-sm) solid var(--border-primary);
+  border-radius: var(--radius-md);
+  transition: var(--transition-practical);
+}
+
+.vce-quick-guide-step:hover {
+  border-color: var(--color-success);
+  box-shadow: var(--shadow-sm);
+}
+
+.vce-quick-guide-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success);
+  background: var(--color-success-surface);
+  border: var(--border-width-sm) solid var(--color-success);
+  border-radius: var(--radius-round);
+}
+
+.vce-quick-guide-content {
+  flex: 1;
+}
+
+.vce-quick-guide-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.vce-quick-guide-desc {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: var(--line-height-md);
+}
+
+/* ===========================================
  * Spinner
  * =========================================== */
 
@@ -578,7 +777,7 @@
 }
 
 /* ===========================================
- * Alerts / Messages
+ * Alerts / Messages (Uniform fui-message pattern)
  * =========================================== */
 
 .alert {
@@ -587,35 +786,106 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   font-size: var(--font-size-sm);
-  line-height: var(--line-height-sm);
+  line-height: var(--line-height-md);
   border-radius: var(--radius-md);
   border: var(--border-width-sm) solid var(--border-primary);
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
+.alert-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.alert-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.alert-dismiss {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: -2px -4px -2px 0;
+  background: transparent;
+  border: none;
+  color: currentColor;
+  opacity: 0.6;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-practical);
+}
+
+.alert-dismiss:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .alert[data-variant="success"] {
   background: var(--color-success-surface);
   border-color: var(--color-success);
+}
+
+.alert[data-variant="success"] .alert-icon,
+.alert[data-variant="success"] .alert-title {
   color: var(--color-success);
 }
 
 .alert[data-variant="error"] {
   background: var(--color-error-surface);
   border-color: var(--color-error);
+}
+
+.alert[data-variant="error"] .alert-icon,
+.alert[data-variant="error"] .alert-title {
   color: var(--color-error);
 }
 
 .alert[data-variant="warning"] {
   background: var(--color-warning-surface);
   border-color: var(--color-warning);
+}
+
+.alert[data-variant="warning"] .alert-icon,
+.alert[data-variant="warning"] .alert-title {
   color: var(--color-warning);
 }
 
 .alert[data-variant="info"] {
   background: var(--color-info-surface);
   border-color: var(--color-info);
+}
+
+.alert[data-variant="info"] .alert-icon,
+.alert[data-variant="info"] .alert-title {
   color: var(--color-info);
+}
+
+/* Alert animation for dismiss */
+.alert[data-hiding] {
+  animation: alertFadeOut 0.3s ease-out forwards;
+}
+
+@keyframes alertFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-8px); }
 }
 
 /* ===========================================

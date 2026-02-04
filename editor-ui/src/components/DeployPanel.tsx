@@ -173,10 +173,19 @@ export function DeployPanel({ nodes, edges }: Props) {
         {/* Validation Errors */}
         {errors.length > 0 && (
           <div className="alert vce-mt-3" data-variant="error">
-            <div className="vce-panel-error-title">Validation Errors:</div>
-            {errors.map((err, i) => (
-              <div key={i} className="vce-panel-error-item">• {err}</div>
-            ))}
+            <span className="alert-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </span>
+            <div className="alert-content">
+              <div className="alert-title">Validation Errors</div>
+              {errors.map((err, i) => (
+                <div key={i}>• {err}</div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -196,11 +205,30 @@ export function DeployPanel({ nodes, edges }: Props) {
               <span>Ratio:</span>
               <span className="vce-text-success">{stats.compressionRatio}% smaller</span>
             </div>
-            <div className="vce-panel-stat-row">
-              <span>Config Store:</span>
-              <span className={stats.fitsInConfigStore ? 'vce-text-success' : 'vce-text-error'}>
-                {stats.fitsInConfigStore ? 'Fits (< 8KB)' : 'Too large!'}
-              </span>
+
+            {/* Config Store Usage Meter */}
+            <div className="vce-meter-section">
+              <div className="vce-meter-label">
+                <span>Config Store Usage</span>
+                <span>{Math.round((stats.compressedSize / 8000) * 100)}% of 8KB</span>
+              </div>
+              <div className="vce-meter">
+                <div
+                  className="vce-meter-fill"
+                  data-state={
+                    !stats.fitsInConfigStore ? 'error' :
+                    stats.compressedSize > 6400 ? 'warning' : 'success'
+                  }
+                  style={{ width: `${Math.min((stats.compressedSize / 8000) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="vce-meter-hint">
+                {stats.fitsInConfigStore
+                  ? stats.compressedSize > 6400
+                    ? 'Approaching limit - consider simplifying rules'
+                    : 'Plenty of room for more rules'
+                  : 'Exceeds 8KB limit - reduce rule complexity'}
+              </div>
             </div>
 
             {stats.fitsInConfigStore && (
@@ -218,8 +246,17 @@ export function DeployPanel({ nodes, edges }: Props) {
 
         {/* Info */}
         <div className="alert vce-mt-3" data-variant="info">
-          Rules are compressed using gzip and base64 encoded to maximize storage efficiency.
-          Config Store limit: 8,000 characters per value.
+          <span className="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </span>
+          <div className="alert-content">
+            Rules are compressed using gzip and base64 encoded to maximize storage efficiency.
+            Config Store limit: 8,000 characters per value.
+          </div>
         </div>
       </div>
     </div>
