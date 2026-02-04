@@ -1,5 +1,6 @@
 import { type NodeProps, useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
+import { Stack } from '@fastly/beacon-mantine'
 import { NodeBase, NodeField, NodeSelect, NodeInput, NodeCheckbox } from './NodeBase'
 
 export type LoggingNodeData = {
@@ -122,7 +123,7 @@ export function LoggingNode({ id, data, selected }: NodeProps) {
         />
       </NodeField>
 
-      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Stack gap="xs" style={{ marginTop: '8px' }}>
         <NodeCheckbox
           checked={nodeData.includeHeaders ?? true}
           onChange={(v) => updateData('includeHeaders', v)}
@@ -133,7 +134,7 @@ export function LoggingNode({ id, data, selected }: NodeProps) {
           onChange={(v) => updateData('includeBody', v)}
           label="Include body"
         />
-      </div>
+      </Stack>
     </NodeBase>
   )
 }

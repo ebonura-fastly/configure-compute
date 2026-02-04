@@ -5,6 +5,8 @@ import {
   useReactFlow,
   type EdgeProps,
 } from '@xyflow/react'
+import { Box, ActionIcon } from '@fastly/beacon-mantine'
+import { IconClose } from '@fastly/beacon-icons'
 
 export function DeletableEdge({
   id,
@@ -36,7 +38,7 @@ export function DeletableEdge({
     <>
       <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
-        <div
+        <Box
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
@@ -44,14 +46,16 @@ export function DeletableEdge({
           }}
           className="nodrag nopan"
         >
-          <button
+          <ActionIcon
             onClick={onEdgeClick}
+            variant="filled"
+            size="xs"
             className="vce-edge-delete-btn"
             title="Delete connection"
           >
-            ×
-          </button>
-        </div>
+            <IconClose width={10} height={10} />
+          </ActionIcon>
+        </Box>
       </EdgeLabelRenderer>
     </>
   )

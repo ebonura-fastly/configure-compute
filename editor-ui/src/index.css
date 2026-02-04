@@ -427,24 +427,40 @@ body {
   justify-content: center;
 }
 
-/* Filter Popover - ensure it renders above sidebar */
-.vce-filter-popover {
-  min-width: 200px;
+/* Filter Dropdown - custom implementation for reliable positioning */
+.vce-filter-dropdown-wrapper {
+  position: relative;
+}
+
+.vce-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.vce-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  padding: var(--space-3);
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: vce-dropdown-enter 0.15s ease-out;
 }
 
-/* Beacon PopOver portal - render above sidebar
-   Portal containers are appended to body with emotion-generated classes */
-body > div[class*="css-"] {
-  z-index: 9999 !important;
-}
-
-/* Ensure the popover content has proper background in dark mode */
-.vce-filter-popover {
-  background: var(--bg-primary) !important;
+@keyframes vce-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .vce-filter-header {

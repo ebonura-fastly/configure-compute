@@ -9,12 +9,12 @@ import {
   Select,
   Alert,
   Pill,
-  LoadingIndicator,
-  PopOver,
+  Loader,
+  Popover,
   Checkbox,
-} from '@fastly/beacon'
-import type { SelectOptionType } from '@fastly/beacon'
-import { allTemplates, templatesByCategory, instantiateTemplate, type RuleTemplate } from '../templates'
+  Stack,
+} from '@fastly/beacon-mantine'
+import { allTemplates, instantiateTemplate, type RuleTemplate } from '../templates'
 
 type SidebarProps = {
   nodes: Node[]
@@ -315,52 +315,51 @@ function TemplatesTab({
           )}
         </div>
 
-        <PopOver
-          active={filterOpen}
-          attach="bottom-start"
-          portal
-          onClose={() => setFilterOpen(false)}
-          content={
-            <Box className="vce-filter-popover" padding="md">
-              <div className="vce-filter-header">
-                <Text size="sm" style={{ fontWeight: 600 }}>Filter by Category</Text>
-                {activeFilterCount > 0 && (
-                  <button className="vce-filter-clear" onClick={clearFilters}>
-                    Clear all
-                  </button>
-                )}
-              </div>
-              <div className="vce-filter-options">
-                {Object.entries(categoryLabels).map(([key, label]) => (
-                  <label key={key} className="vce-filter-option">
-                    <Checkbox
-                      name={`filter-${key}`}
-                      value={key}
-                      checked={selectedCategories.has(key)}
-                      onChange={() => toggleCategory(key)}
-                      label={label}
-                    />
-                  </label>
-                ))}
-              </div>
-            </Box>
-          }
+        <Popover
+          opened={filterOpen}
+          onChange={setFilterOpen}
+          position="bottom-end"
+          withArrow
+          shadow="md"
         >
-          <button
-            ref={filterButtonRef}
-            className="vce-filter-button"
-            data-active={filterOpen || activeFilterCount > 0}
-            onClick={() => setFilterOpen(!filterOpen)}
-            aria-label="Filter templates"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            {activeFilterCount > 0 && (
-              <span className="vce-filter-badge">{activeFilterCount}</span>
-            )}
-          </button>
-        </PopOver>
+          <Popover.Target>
+            <button
+              ref={filterButtonRef}
+              className="vce-filter-button"
+              data-active={filterOpen || activeFilterCount > 0}
+              onClick={() => setFilterOpen(!filterOpen)}
+              aria-label="Filter templates"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              {activeFilterCount > 0 && (
+                <span className="vce-filter-badge">{activeFilterCount}</span>
+              )}
+            </button>
+          </Popover.Target>
+          <Popover.Dropdown>
+            <Flex className="vce-filter-header" justify="space-between" align="center" style={{ marginBottom: '12px' }}>
+              <Text size="sm" weight="bold">Filter by Category</Text>
+              {activeFilterCount > 0 && (
+                <Button variant="subtle" size="compact-sm" onClick={clearFilters}>
+                  Clear all
+                </Button>
+              )}
+            </Flex>
+            <Stack gap="xs">
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <Checkbox
+                  key={key}
+                  label={label}
+                  checked={selectedCategories.has(key)}
+                  onChange={() => toggleCategory(key)}
+                  size="sm"
+                />
+              ))}
+            </Stack>
+          </Popover.Dropdown>
+        </Popover>
       </div>
 
       {/* Active Filters Display */}
@@ -407,7 +406,7 @@ function TemplatesTab({
               <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
               <path d="m21 21-4.35-4.35" />
             </svg>
-            <Text size="sm" color="muted">No templates found</Text>
+            <Text size="sm" className="vce-text-muted">No templates found</Text>
             {(searchQuery || activeFilterCount > 0) && (
               <button className="vce-templates-reset" onClick={clearFilters}>
                 Clear filters
@@ -743,7 +742,7 @@ function FastlyTab({
   const [createProgress, setCreateProgress] = useState<string | null>(null)
   const [engineUpdateProgress, setEngineUpdateProgress] = useState<string | null>(null)
   const [deployStatus, setDeployStatus] = useState<DeployStatus>('idle')
-  const [deployProgress, setDeployProgress] = useState<string | null>(null)
+  const [_deployProgress, setDeployProgress] = useState<string | null>(null)
 
   const [storePreview, setStorePreview] = useState<{
     storeId: string
@@ -1745,10 +1744,10 @@ function FastlyTab({
   // If local mode is active, show local mode UI
   if (localMode && localServerAvailable) {
     return (
-      <Box padding="md">
+      <Box p="md">
         {/* Local Mode Banner */}
         <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <Pill status="info">Local Dev Mode</Pill>
+          <Pill variant="action">Local Dev Mode</Pill>
           <Button
             variant="secondary"
             size="sm"
@@ -1760,7 +1759,7 @@ function FastlyTab({
 
         {/* Local Compute Status */}
         <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>Local Compute Server</Text>
-        <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+        <Box p="sm" mb="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
           <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <a
               href="http://127.0.0.1:7676/"
@@ -1777,15 +1776,15 @@ function FastlyTab({
 
           {/* Status */}
           <Flex style={{ alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Pill status={localComputeRunning ? 'success' : 'error'} size="sm">
+            <Pill variant={localComputeRunning ? 'success' : 'error'}>
               {localComputeRunning ? 'Running' : 'Not Running'}
             </Pill>
           </Flex>
 
           {/* Engine Version */}
           {localComputeRunning && localEngineVersion && (
-            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
-              <Text size="xs" color="muted">Engine: </Text>
+            <Box p="sm" mb="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+              <Text size="xs" className="vce-text-muted">Engine: </Text>
               <Text size="xs">{localEngineVersion.engine} v{localEngineVersion.version}</Text>
             </Box>
           )}
@@ -1793,19 +1792,18 @@ function FastlyTab({
           {/* Open in Browser button when running */}
           {localComputeRunning && (
             <Button
-              variant="secondary"
-              as="a"
+              variant="outline"
+              component="a"
               href="http://127.0.0.1:7676/"
               target="_blank"
-              rel="noopener noreferrer"
-              style={{ width: '100%' }}
+              fullWidth
             >
               Open in Browser
             </Button>
           )}
 
           {!localComputeRunning && (
-            <Text size="xs" color="muted">
+            <Text size="xs" className="vce-text-muted">
               Run <code style={{ background: 'var(--color-bg-subtle)', padding: '2px 4px', borderRadius: '2px' }}>make serve</code> to start the local Compute server
             </Text>
           )}
@@ -1816,44 +1814,44 @@ function FastlyTab({
           {loading ? 'Saving...' : 'Save Rules Locally'}
         </Button>
 
-        <Text size="xs" color="muted">
+        <Text size="xs" className="vce-text-muted">
           {nodes.length} nodes, {edges.length} edges
         </Text>
 
         {localComputeRunning && (
-          <Text size="xs" color="muted" style={{ fontStyle: 'italic' }}>
+          <Text size="xs" className="vce-text-muted" style={{ fontStyle: 'italic' }}>
             Restart the Compute server to reload rules
           </Text>
         )}
 
         {/* Status/Error Messages */}
         {error && (
-          <Box marginTop="md">
-            <Alert status="error">{error}</Alert>
+          <Box mt="md">
+            <Alert variant="error">{error}</Alert>
           </Box>
         )}
         {status && !error && (
-          <Box marginTop="md">
-            <Alert status="success">{status}</Alert>
+          <Box mt="md">
+            <Alert variant="success">{status}</Alert>
           </Box>
         )}
 
         {/* Test URLs */}
         {localComputeRunning && (
-          <Box marginTop="md">
+          <Box mt="md">
             <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>Test URLs</Text>
-            <Box padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
-              <Box marginBottom="sm">
+            <Box p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+              <Box mb="sm">
                 <a href="http://127.0.0.1:7676/_version" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-link)' }}>
                   /_version
                 </a>
-                <Text size="xs" color="muted"> - Engine info</Text>
+                <Text size="xs" className="vce-text-muted"> - Engine info</Text>
               </Box>
               <Box>
                 <a href="http://127.0.0.1:7676/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-link)' }}>
                   /
                 </a>
-                <Text size="xs" color="muted"> - Test request</Text>
+                <Text size="xs" className="vce-text-muted"> - Test request</Text>
               </Box>
             </Box>
           </Box>
@@ -1865,7 +1863,7 @@ function FastlyTab({
   // Show connection UI if not connected to Fastly
   if (!isConnected) {
     return (
-      <Box padding="md">
+      <Box p="md">
         {/* Local Dev Mode button */}
         <Button variant="primary" onClick={checkLocalEnvironment} style={{ width: '100%' }}>
           Use Local Dev Mode
@@ -1873,15 +1871,15 @@ function FastlyTab({
 
         <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
           <Box style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
-          <Text size="xs" color="muted">OR</Text>
+          <Text size="xs" className="vce-text-muted">OR</Text>
           <Box style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
         </Flex>
 
-        <Text size="sm" color="muted" style={{ marginBottom: '12px' }}>
+        <Text size="sm" className="vce-text-muted" style={{ marginBottom: '12px' }}>
           Connect to Fastly to deploy rules to the edge.
         </Text>
 
-        <Box marginBottom="md">
+        <Box mb="md">
           <TextInput
             label="API Token"
             type="password"
@@ -1889,7 +1887,7 @@ function FastlyTab({
             onChange={(e) => updateFastlyState({ apiToken: e.target.value })}
             placeholder="Enter your Fastly API token"
           />
-          <Text size="xs" color="muted" style={{ marginTop: '4px' }}>
+          <Text size="xs" className="vce-text-muted" style={{ marginTop: '4px' }}>
             Create a token at{' '}
             <a href="https://manage.fastly.com/account/personal/tokens" target="_blank" rel="noreferrer" style={{ color: 'var(--color-link)' }}>
               manage.fastly.com
@@ -1907,8 +1905,8 @@ function FastlyTab({
         </Button>
 
         {error && (
-          <Box marginTop="md">
-            <Alert status="error">{error}</Alert>
+          <Box mt="md">
+            <Alert variant="error">{error}</Alert>
           </Box>
         )}
       </Box>
@@ -1917,10 +1915,10 @@ function FastlyTab({
 
   // Connected to Fastly - show full UI
   return (
-    <Box padding="md">
+    <Box p="md">
       {/* Connection status row */}
       <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <Pill status="success">Connected</Pill>
+        <Pill variant="success">Connected</Pill>
         <Button variant="secondary" size="sm" onClick={handleDisconnect}>
           Disconnect
         </Button>
@@ -1928,7 +1926,7 @@ function FastlyTab({
 
       {/* Check for local mode button */}
       {!localMode && (
-        <Box marginBottom="md">
+        <Box mb="md">
           <Button variant="secondary" onClick={checkLocalEnvironment} style={{ width: '100%' }}>
             Switch to Local Dev Mode
           </Button>
@@ -1937,13 +1935,13 @@ function FastlyTab({
 
       {/* Create New Service Form */}
       {showCreateForm ? (
-        <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+        <Box p="sm" mb="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
           <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <Text size="sm" style={{ fontWeight: 600 }}>New VCE Service</Text>
             <Button variant="secondary" size="sm" onClick={() => setShowCreateForm(false)}>×</Button>
           </Flex>
 
-          <Box marginBottom="sm">
+          <Box mb="sm">
             <TextInput
               label="Service Name"
               value={createForm.serviceName}
@@ -1953,12 +1951,12 @@ function FastlyTab({
           </Box>
 
           {createProgress && (
-            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+            <Box p="sm" mb="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
               {createProgress}
             </Box>
           )}
 
-          <Text size="xs" color="muted" style={{ marginBottom: '8px' }}>
+          <Text size="xs" className="vce-text-muted" style={{ marginBottom: '8px' }}>
             Service creation takes 1-2 minutes.
           </Text>
 
@@ -1972,7 +1970,7 @@ function FastlyTab({
           </Button>
         </Box>
       ) : (
-        <Box marginBottom="md">
+        <Box mb="md">
           <Button variant="secondary" onClick={() => setShowCreateForm(true)} style={{ width: '100%', border: '1px dashed var(--color-border)' }}>
             + Create New VCE Service
           </Button>
@@ -1980,29 +1978,21 @@ function FastlyTab({
       )}
 
       {/* Service Selection */}
-      <Box marginBottom="md">
+      <Box mb="md">
         <Text size="sm" style={{ fontWeight: 500, marginBottom: '4px' }}>VCE Service</Text>
 
         {services.length === 0 ? (
-          <Box padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
-            <Text size="sm" color="muted">No Compute services found. Create one above.</Text>
+          <Box p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+            <Text size="sm" className="vce-text-muted">No Compute services found. Create one above.</Text>
           </Box>
         ) : (
           <Select
-            options={[
-              ...services.filter(s => s.isVceEnabled).map(s => ({
-                value: s.id,
-                label: s.name,
-                group: 'VCE Services'
-              })),
-              ...services.filter(s => !s.isVceEnabled).map(s => ({
-                value: s.id,
-                label: `${s.name} (not configured)`,
-                group: 'Other Compute Services'
-              }))
-            ]}
-            value={selectedService ? { value: selectedService, label: services.find(s => s.id === selectedService)?.name || '' } : null}
-            onChange={(option) => option && handleServiceChange((option as SelectOptionType).value)}
+            data={services.map(s => ({
+              value: s.id,
+              label: s.isVceEnabled ? s.name : `${s.name} (not configured)`,
+            }))}
+            value={selectedService || undefined}
+            onChange={(value) => value && handleServiceChange(value)}
             placeholder="Select a Compute service..."
           />
         )}
@@ -2016,7 +2006,7 @@ function FastlyTab({
         return (
           <>
           {/* Service Info Card */}
-          <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Box p="sm" mb="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
             <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <Text size="sm" style={{ fontWeight: 600 }}>Service Info</Text>
               <Button
@@ -2029,8 +2019,8 @@ function FastlyTab({
               </Button>
             </Flex>
 
-            <Box marginBottom="sm">
-              <Text size="xs" color="muted">Service ID</Text>
+            <Box mb="sm">
+              <Text size="xs" className="vce-text-muted">Service ID</Text>
               <Flex style={{ alignItems: 'center', gap: '8px' }}>
                 <Text size="xs" style={{ fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{service.id}</Text>
                 <Button variant="secondary" size="sm" onClick={() => navigator.clipboard.writeText(service.id)}>Copy</Button>
@@ -2038,7 +2028,7 @@ function FastlyTab({
             </Box>
 
             <Box>
-              <Text size="xs" color="muted">Test URL</Text>
+              <Text size="xs" className="vce-text-muted">Test URL</Text>
               <Flex style={{ alignItems: 'center', gap: '8px' }}>
                 <a href={serviceUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--color-link)', fontSize: '11px' }}>
                   {service.name}.edgecompute.app
@@ -2049,7 +2039,7 @@ function FastlyTab({
           </Box>
 
           {/* Step 1: Engine */}
-          <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Box mb="md" p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
             <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
               <Box style={{
                 width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2059,13 +2049,13 @@ function FastlyTab({
               }}>1</Box>
               <Box>
                 <Text size="sm" style={{ fontWeight: 600 }}>Engine (WASM Binary)</Text>
-                <Text size="xs" color="muted">The code that runs on Fastly's edge servers</Text>
+                <Text size="xs" className="vce-text-muted">The code that runs on Fastly's edge servers</Text>
               </Box>
             </Flex>
 
             {engineUpdateProgress ? (
-              <Box padding="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
-                <Box marginBottom="sm">{engineUpdateProgress}</Box>
+              <Box p="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+                <Box mb="sm">{engineUpdateProgress}</Box>
                 {engineUpdateProgress.includes('POPs') && (() => {
                   const match = engineUpdateProgress.match(/(\d+)\/(\d+) POPs \((\d+)%\)/)
                   if (match) {
@@ -2081,23 +2071,23 @@ function FastlyTab({
               </Box>
             ) : engineVersionLoading ? (
               <Flex style={{ justifyContent: 'center', padding: '12px' }}>
-                <LoadingIndicator />
+                <Loader />
               </Flex>
             ) : engineVersion ? (
               <>
                 <Flex style={{ alignItems: 'center', justifyContent: 'space-between', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
                   <Text size="sm">{engineVersion.engine} v{engineVersion.version}</Text>
                   {engineVersion.engine !== 'Visual Compute Engine' ? (
-                    <Pill status="error" size="sm">Unknown</Pill>
+                    <Pill variant="error">Unknown</Pill>
                   ) : engineVersion.version === VCE_ENGINE_VERSION ? (
-                    <Pill status="success" size="sm">Up to date</Pill>
+                    <Pill variant="success">Up to date</Pill>
                   ) : (
-                    <Pill status="warning" size="sm">Update available</Pill>
+                    <Pill variant="caution">Update available</Pill>
                   )}
                 </Flex>
                 {(engineVersion.engine !== 'Visual Compute Engine' || engineVersion.version !== VCE_ENGINE_VERSION) ? (
                   <>
-                    <Text size="xs" color="muted" style={{ marginTop: '8px' }}>Updates typically take ~30-60s to propagate.</Text>
+                    <Text size="xs" className="vce-text-muted" style={{ marginTop: '8px' }}>Updates typically take ~30-60s to propagate.</Text>
                     <Button variant="primary" onClick={handleUpdateEngine} disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
                       Update Engine to v{VCE_ENGINE_VERSION}
                     </Button>
@@ -2110,11 +2100,11 @@ function FastlyTab({
               </>
             ) : (
               <>
-                <Box padding="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+                <Box p="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
                   <Text size="sm" style={{ color: 'var(--color-error)' }}>Not detected</Text>
-                  <Text size="xs" color="muted"> - service may not be deployed</Text>
+                  <Text size="xs" className="vce-text-muted"> - service may not be deployed</Text>
                 </Box>
-                <Text size="xs" color="muted" style={{ marginTop: '8px', fontStyle: 'italic' }}>
+                <Text size="xs" className="vce-text-muted" style={{ marginTop: '8px', fontStyle: 'italic' }}>
                   {selectedConfigStore ? 'Deployment typically takes ~30-60s to propagate.' : 'Deploy the engine first, then setup Config Store.'}
                 </Text>
                 <Button variant="primary" onClick={handleUpdateEngine} disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
@@ -2129,7 +2119,7 @@ function FastlyTab({
 
       {/* Step 2: Config Store */}
       {selectedService && selectedConfigStore && (
-        <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+        <Box mb="md" p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
           <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
             <Box style={{
               width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2137,7 +2127,7 @@ function FastlyTab({
             }}>2</Box>
             <Box>
               <Text size="sm" style={{ fontWeight: 600 }}>Config Store</Text>
-              <Text size="xs" color="muted">Where your rules are stored (edge key-value store)</Text>
+              <Text size="xs" className="vce-text-muted">Where your rules are stored (edge key-value store)</Text>
             </Box>
           </Flex>
 
@@ -2152,22 +2142,22 @@ function FastlyTab({
 
           {/* Config Store Preview */}
           {storePreview?.storeId === selectedConfigStore && (
-            <Box marginTop="sm" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '4px', maxHeight: '200px', overflow: 'auto' }}>
+            <Box mt="sm" p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '4px', maxHeight: '200px', overflow: 'auto' }}>
               {storePreview.loading && (
                 <Flex style={{ justifyContent: 'center' }}>
-                  <LoadingIndicator />
+                  <Loader />
                 </Flex>
               )}
               {storePreview.error && (
                 <Text size="sm" style={{ color: 'var(--color-error)' }}>{storePreview.error}</Text>
               )}
               {!storePreview.loading && !storePreview.error && storePreview.items.length === 0 && (
-                <Text size="sm" color="muted" style={{ textAlign: 'center' }}>Empty store</Text>
+                <Text size="sm" className="vce-text-muted" style={{ textAlign: 'center' }}>Empty store</Text>
               )}
               {storePreview.items.map((item, idx) => (
-                <Box key={idx} marginBottom="sm" style={{ borderBottom: idx < storePreview.items.length - 1 ? '1px solid var(--color-border)' : 'none', paddingBottom: '8px' }}>
+                <Box key={idx} mb="sm" style={{ borderBottom: idx < storePreview.items.length - 1 ? '1px solid var(--color-border)' : 'none', paddingBottom: '8px' }}>
                   <Text size="xs" style={{ fontWeight: 600 }}>{item.key}</Text>
-                  <Text size="xs" color="muted" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                  <Text size="xs" className="vce-text-muted" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
                     {item.value}{item.truncated && '...'}
                   </Text>
                 </Box>
@@ -2183,26 +2173,26 @@ function FastlyTab({
         if (!service || service.linkedConfigStore) return null
 
         const getStatusPill = () => {
-          if (configStoreStatusLoading) return <Pill size="sm">Checking...</Pill>
-          if (!configStoreStatus) return <Pill size="sm">Not checked</Pill>
+          if (configStoreStatusLoading) return <Pill variant="default">Checking...</Pill>
+          if (!configStoreStatus) return <Pill variant="default">Not checked</Pill>
           switch (configStoreStatus.status) {
             case 'linked_ok':
-              return <Pill status="success" size="sm">Ready</Pill>
+              return <Pill variant="success">Ready</Pill>
             case 'linked_outdated':
-              return <Pill status="warning" size="sm">Update available</Pill>
+              return <Pill variant="caution">Update available</Pill>
             case 'linked_no_manifest':
-              return <Pill status="warning" size="sm">Needs init</Pill>
+              return <Pill variant="caution">Needs init</Pill>
             case 'not_linked':
-              return <Pill size="sm">Not linked</Pill>
+              return <Pill variant="default">Not linked</Pill>
             case 'error':
-              return <Pill status="error" size="sm">Error</Pill>
+              return <Pill variant="error">Error</Pill>
             default:
-              return <Pill size="sm">-</Pill>
+              return <Pill variant="default">-</Pill>
           }
         }
 
         return (
-          <Box padding="sm" marginBottom="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+          <Box p="sm" mb="md" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
             <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
               <Box style={{
                 width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2210,16 +2200,16 @@ function FastlyTab({
               }}>2</Box>
               <Box>
                 <Text size="sm" style={{ fontWeight: 600 }}>Config Store</Text>
-                <Text size="xs" color="muted">Setup required</Text>
+                <Text size="xs" className="vce-text-muted">Setup required</Text>
               </Box>
             </Flex>
 
             {/* Status display */}
-            <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
+            <Box p="sm" mb="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
               <Flex style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <Flex style={{ alignItems: 'center', gap: '8px', flex: 1 }}>
                   {getStatusPill()}
-                  <Text size="xs" color="muted" style={{ flex: 1 }}>
+                  <Text size="xs" className="vce-text-muted" style={{ flex: 1 }}>
                     {configStoreStatusLoading ? 'Checking...' :
                      configStoreStatus ? configStoreStatus.message :
                      'Click Refresh to check status'}
@@ -2239,7 +2229,7 @@ function FastlyTab({
             </Box>
 
             {createProgress && (
-              <Box padding="sm" marginBottom="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+              <Box p="sm" mb="sm" style={{ background: 'var(--color-bg-subtle)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
                 {createProgress}
               </Box>
             )}
@@ -2256,7 +2246,7 @@ function FastlyTab({
       })()}
 
       {/* Step 3: Deploy Rules */}
-      <Box marginBottom="md" padding="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+      <Box mb="md" p="sm" style={{ border: '1px solid var(--color-border)', borderRadius: '8px' }}>
         <Flex style={{ alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
           <Box style={{
             width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2264,7 +2254,7 @@ function FastlyTab({
           }}>3</Box>
           <Box>
             <Text size="sm" style={{ fontWeight: 600 }}>Deploy Rules</Text>
-            <Text size="xs" color="muted">Push your graph to the edge (updates in ~30-40 seconds)</Text>
+            <Text size="xs" className="vce-text-muted">Push your graph to the edge (updates in ~30-40 seconds)</Text>
           </Box>
         </Flex>
 
@@ -2281,12 +2271,12 @@ function FastlyTab({
 
         {/* Deployment Status */}
         {deployStatus !== 'idle' && (
-          <Box marginTop="sm">
+          <Box mt="sm">
             <Pill
-              status={
+              variant={
                 deployStatus === 'verified' ? 'success' :
-                deployStatus === 'timeout' ? 'warning' :
-                deployStatus === 'error' ? 'error' : undefined
+                deployStatus === 'timeout' ? 'caution' :
+                deployStatus === 'error' ? 'error' : 'default'
               }
             >
               {deployStatus === 'deploying' ? 'Pushing to Config Store...' :
@@ -2300,11 +2290,11 @@ function FastlyTab({
 
         <Flex style={{ gap: '16px', marginTop: '12px' }}>
           <Box style={{ flex: 1, textAlign: 'center', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
-            <Text size="xs" color="muted">Nodes</Text>
+            <Text size="xs" className="vce-text-muted">Nodes</Text>
             <Text size="lg" style={{ fontWeight: 600 }}>{nodes.length}</Text>
           </Box>
           <Box style={{ flex: 1, textAlign: 'center', padding: '8px', background: 'var(--color-bg-subtle)', borderRadius: '4px' }}>
-            <Text size="xs" color="muted">Edges</Text>
+            <Text size="xs" className="vce-text-muted">Edges</Text>
             <Text size="lg" style={{ fontWeight: 600 }}>{edges.length}</Text>
           </Box>
         </Flex>
@@ -2343,13 +2333,13 @@ function FastlyTab({
 
       {/* Status/Error Messages */}
       {error && (
-        <Box marginTop="md">
-          <Alert status="error">{error}</Alert>
+        <Box mt="md">
+          <Alert variant="error">{error}</Alert>
         </Box>
       )}
       {status && !error && (
-        <Box marginTop="md">
-          <Alert status="success">{status}</Alert>
+        <Box mt="md">
+          <Alert variant="success">{status}</Alert>
         </Box>
       )}
     </Box>

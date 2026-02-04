@@ -19,7 +19,7 @@ import {
   SelectionMode,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Flex, Text, Switch } from '@fastly/beacon'
+import { Flex, Text, Switch, Box, Stack, Title } from '@fastly/beacon-mantine'
 import { IconFastlyLogo } from '@fastly/beacon-icons/logos'
 
 import { ConditionNode, ActionNode, RequestNode, RateLimitNode, TransformNode, BackendNode, LoggingNode, RuleGroupNode, HeaderNode, CacheNode } from './components/nodes'
@@ -163,14 +163,14 @@ function Flow() {
     <>
       {/* Header */}
       <header className="vce-header">
-        <Flex alignItems="center" gap="sm">
+        <Flex align="center" gap="sm">
           <IconFastlyLogo width={24} height={24} />
-          <span className="vce-header-title">Visual Compute Engine</span>
+          <Text size="sm" weight="bold" className="vce-header-title">Visual Compute Engine</Text>
         </Flex>
-        <Flex alignItems="center" gap="sm">
-          <Text size="xs" color="muted">Light</Text>
-          <Switch checked={isDark} onChange={toggle} />
-          <Text size="xs" color="muted">Dark</Text>
+        <Flex align="center" gap="sm">
+          <Text size="xs">Light</Text>
+          <Switch checked={isDark} onChange={() => toggle()} size="sm" />
+          <Text size="xs">Dark</Text>
         </Flex>
       </header>
 
@@ -212,33 +212,33 @@ function Flow() {
 
           {/* Empty Canvas State */}
           {nodes.length === 0 && (
-            <div className="vce-empty-canvas">
-              <div className="vce-empty-canvas-icon">
+            <Stack className="vce-empty-canvas" align="center" gap="lg">
+              <Box className="vce-empty-canvas-icon">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-              </div>
-              <h2 className="vce-empty-canvas-title">Start Building Your Security Rules</h2>
-              <p className="vce-empty-canvas-text">
+              </Box>
+              <Title order={2} className="vce-empty-canvas-title">Start Building Your Security Rules</Title>
+              <Text className="vce-empty-canvas-text">
                 Drag components from the sidebar onto the canvas,<br />
                 or use a template to get started quickly.
-              </p>
-              <div className="vce-empty-canvas-steps">
+              </Text>
+              <Stack className="vce-empty-canvas-steps" gap="md">
                 {[
                   { num: 1, title: 'Add a Request Node', desc: 'Start with a Request node as your entry point. This captures incoming traffic.' },
                   { num: 2, title: 'Add Conditions', desc: 'Connect Condition nodes to inspect request fields like path, headers, or IP.' },
                   { num: 3, title: 'Define Actions', desc: 'Add Action nodes to block, allow, rate-limit, or route traffic to backends.' }
                 ].map(step => (
-                  <div key={step.num} className="fui-step__header">
-                    <span className="fui-step__number">{step.num}</span>
-                    <div className="fui-step__info">
-                      <p className="fui-step__title">{step.title}</p>
-                      <p className="fui-step__description">{step.desc}</p>
-                    </div>
-                  </div>
+                  <Flex key={step.num} className="fui-step__header" gap="sm" align="flex-start">
+                    <Text className="fui-step__number" size="sm" weight="bold">{step.num}</Text>
+                    <Box className="fui-step__info">
+                      <Text className="fui-step__title" size="sm" weight="bold">{step.title}</Text>
+                      <Text className="fui-step__description" size="xs">{step.desc}</Text>
+                    </Box>
+                  </Flex>
                 ))}
-              </div>
-            </div>
+              </Stack>
+            </Stack>
           )}
         </div>
       </div>

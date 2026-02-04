@@ -1,4 +1,6 @@
 import type { Node } from '@xyflow/react'
+import { Box, Flex, Text, Select, TextInput, ActionIcon, Stack } from '@fastly/beacon-mantine'
+import { IconClose } from '@fastly/beacon-icons'
 
 type Props = {
   node: Node | null
@@ -27,95 +29,75 @@ export function NodeEditor({ node, onUpdate, onClose }: Props) {
   }
 
   return (
-    <div className="vce-node-editor">
-      <div className="vce-node-editor-header">
-        <span>Edit {node.type}</span>
-        <button onClick={onClose} className="vce-node-editor-close">×</button>
-      </div>
+    <Box className="vce-node-editor">
+      <Flex className="vce-node-editor-header" justify="space-between" align="center">
+        <Text size="sm" weight="bold">Edit {node.type}</Text>
+        <ActionIcon onClick={onClose} variant="subtle" size="sm">
+          <IconClose width={14} height={14} />
+        </ActionIcon>
+      </Flex>
 
       {node.type === 'condition' && (
-        <div className="vce-node-editor-form">
-          <label className="vce-node-editor-label">
-            Field
-            <select
-              value={(node.data as { field?: string }).field || 'path'}
-              onChange={(e) => update('field', e.target.value)}
-              className="form-select"
-            >
-              {FIELDS.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </label>
-          <label className="vce-node-editor-label">
-            Operator
-            <select
-              value={(node.data as { operator?: string }).operator || 'equals'}
-              onChange={(e) => update('operator', e.target.value)}
-              className="form-select"
-            >
-              {(OPERATORS[(node.data as { field?: string }).field as keyof typeof OPERATORS] || OPERATORS.path).map(op => (
-                <option key={op} value={op}>{op}</option>
-              ))}
-            </select>
-          </label>
-          <label className="vce-node-editor-label">
-            Value
-            <input
-              type="text"
-              value={(node.data as { value?: string }).value || ''}
-              onChange={(e) => update('value', e.target.value)}
-              className="form-input"
-            />
-          </label>
-        </div>
+        <Stack className="vce-node-editor-form" gap="sm">
+          <Select
+            label="Field"
+            value={(node.data as { field?: string }).field || 'path'}
+            onChange={(val) => val && update('field', val)}
+            data={FIELDS.map(f => ({ value: f, label: f }))}
+            size="sm"
+          />
+          <Select
+            label="Operator"
+            value={(node.data as { operator?: string }).operator || 'equals'}
+            onChange={(val) => val && update('operator', val)}
+            data={(OPERATORS[(node.data as { field?: string }).field as keyof typeof OPERATORS] ?? OPERATORS.path).map(op => ({ value: op, label: op }))}
+            size="sm"
+          />
+          <TextInput
+            label="Value"
+            value={(node.data as { value?: string }).value || ''}
+            onChange={(e) => update('value', e.target.value)}
+            size="sm"
+          />
+        </Stack>
       )}
 
       {node.type === 'logic' && (
-        <div className="vce-node-editor-form">
-          <label className="vce-node-editor-label">
-            Operation
-            <select
-              value={(node.data as { operation?: string }).operation || 'AND'}
-              onChange={(e) => update('operation', e.target.value)}
-              className="form-select"
-            >
-              {LOGIC_OPS.map(op => <option key={op} value={op}>{op}</option>)}
-            </select>
-          </label>
-        </div>
+        <Stack className="vce-node-editor-form" gap="sm">
+          <Select
+            label="Operation"
+            value={(node.data as { operation?: string }).operation || 'AND'}
+            onChange={(val) => val && update('operation', val)}
+            data={LOGIC_OPS.map(op => ({ value: op, label: op }))}
+            size="sm"
+          />
+        </Stack>
       )}
 
       {node.type === 'action' && (
-        <div className="vce-node-editor-form">
-          <label className="vce-node-editor-label">
-            Action
-            <select
-              value={(node.data as { action?: string }).action || 'block'}
-              onChange={(e) => update('action', e.target.value)}
-              className="form-select"
-            >
-              {ACTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </label>
-          <label className="vce-node-editor-label">
-            Status Code
-            <input
-              type="number"
-              value={(node.data as { statusCode?: number }).statusCode || 403}
-              onChange={(e) => update('statusCode', parseInt(e.target.value))}
-              className="form-input"
-            />
-          </label>
-          <label className="vce-node-editor-label">
-            Message
-            <input
-              type="text"
-              value={(node.data as { message?: string }).message || ''}
-              onChange={(e) => update('message', e.target.value)}
-              className="form-input"
-            />
-          </label>
-        </div>
+        <Stack className="vce-node-editor-form" gap="sm">
+          <Select
+            label="Action"
+            value={(node.data as { action?: string }).action || 'block'}
+            onChange={(val) => val && update('action', val)}
+            data={ACTIONS.map(a => ({ value: a, label: a }))}
+            size="sm"
+          />
+          <TextInput
+            label="Status Code"
+            type="number"
+            value={String((node.data as { statusCode?: number }).statusCode || 403)}
+            onChange={(e) => update('statusCode', parseInt(e.target.value))}
+            size="sm"
+          />
+          <TextInput
+            label="Message"
+            value={(node.data as { message?: string }).message || ''}
+            onChange={(e) => update('message', e.target.value)}
+            size="sm"
+          />
+        </Stack>
       )}
-    </div>
+    </Box>
   )
 }

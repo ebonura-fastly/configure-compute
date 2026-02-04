@@ -1,5 +1,6 @@
 import { type NodeProps, useReactFlow } from '@xyflow/react'
 import { useCallback } from 'react'
+import { Text } from '@fastly/beacon-mantine'
 import { NodeBase, NodeField, NodeSelect, NodeInput } from './NodeBase'
 
 export type HeaderNodeData = {
@@ -85,16 +86,11 @@ export function HeaderNode({ id, data, selected }: NodeProps) {
       )}
 
       {/* Helper text */}
-      <div style={{
-        fontSize: 10,
-        color: '#888',
-        marginTop: 8,
-        lineHeight: 1.4,
-      }}>
+      <Text size="xs" className="vce-node-helper-text" style={{ marginTop: '8px' }}>
         {operation === 'set' && 'Replaces any existing header with this value'}
         {operation === 'append' && 'Adds value to header (allows multiple values)'}
         {operation === 'remove' && 'Removes all values for this header'}
-      </div>
+      </Text>
     </NodeBase>
   )
 }

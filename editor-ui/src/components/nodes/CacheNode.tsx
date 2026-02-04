@@ -1,5 +1,6 @@
 import { type NodeProps, useReactFlow } from '@xyflow/react'
 import { useCallback, useState } from 'react'
+import { Box, Flex, Text } from '@fastly/beacon-mantine'
 import { NodeBase, NodeField, NodeSelect, NodeInput } from './NodeBase'
 
 export type CacheNodeData = {
@@ -85,55 +86,50 @@ export function CacheNode({ id, data, selected }: NodeProps) {
       {mode === 'configure' && (
         <>
           <NodeField label="TTL">
-            <div style={{ display: 'flex', gap: 4 }}>
-              <div style={{ width: 70 }}>
+            <Flex gap="xs">
+              <Box w={70}>
                 <NodeInput
                   value={String(ttl)}
                   onChange={(v) => updateData('ttl', parseInt(v) || 0)}
                   placeholder="300"
                 />
-              </div>
+              </Box>
               <NodeSelect
                 value={ttlUnit}
                 onChange={(v) => updateData('ttlUnit', v)}
                 options={ttlUnitOptions}
               />
-            </div>
+            </Flex>
           </NodeField>
 
           <NodeField label="Stale While Revalidate">
-            <div style={{ display: 'flex', gap: 4 }}>
-              <div style={{ width: 70 }}>
+            <Flex gap="xs">
+              <Box w={70}>
                 <NodeInput
                   value={String(swr)}
                   onChange={(v) => updateData('staleWhileRevalidate', parseInt(v) || 0)}
                   placeholder="60"
                 />
-              </div>
+              </Box>
               <NodeSelect
                 value={swrUnit}
                 onChange={(v) => updateData('swrUnit', v)}
                 options={swrUnitOptions}
               />
-            </div>
+            </Flex>
           </NodeField>
 
           {/* Advanced section toggle */}
-          <div
+          <Flex
             onClick={() => setShowAdvanced(!showAdvanced)}
-            style={{
-              fontSize: 11,
-              color: '#888',
-              cursor: 'pointer',
-              marginTop: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
+            align="center"
+            gap="xs"
+            style={{ marginTop: '8px', cursor: 'pointer' }}
+            className="vce-node-toggle"
           >
-            <span>{showAdvanced ? '▾' : '▸'}</span>
-            <span>Advanced</span>
-          </div>
+            <Text size="xs">{showAdvanced ? '▾' : '▸'}</Text>
+            <Text size="xs">Advanced</Text>
+          </Flex>
 
           {showAdvanced && (
             <NodeField label="Surrogate Keys">
@@ -148,15 +144,10 @@ export function CacheNode({ id, data, selected }: NodeProps) {
       )}
 
       {/* Helper text */}
-      <div style={{
-        fontSize: 10,
-        color: '#888',
-        marginTop: 8,
-        lineHeight: 1.4,
-      }}>
+      <Text size="xs" className="vce-node-helper-text" style={{ marginTop: '8px' }}>
         {mode === 'pass' && 'Request will bypass cache and always fetch from origin'}
         {mode === 'configure' && 'Sets cache TTL and stale-while-revalidate duration'}
-      </div>
+      </Text>
     </NodeBase>
   )
 }

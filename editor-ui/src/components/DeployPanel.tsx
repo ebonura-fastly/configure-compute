@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Node, Edge } from '@xyflow/react'
-import { Button, Flex, Text, TextInput, Switch, Alert, Pill } from '@fastly/beacon'
+import { Button, Flex, Box, Stack, Text, TextInput, Switch, Alert, Pill, Progress } from '@fastly/beacon-mantine'
+import { IconClose } from '@fastly/beacon-icons'
 import {
   validateGraph,
   generateCompressedConfigStoreContent,
@@ -88,7 +89,6 @@ export function DeployPanel({ nodes, edges }: Props) {
   if (!isOpen) {
     return (
       <Button
-        variant="primary"
         onClick={() => setIsOpen(true)}
         className="vce-panel-toggle vce-panel-toggle--deploy"
       >
@@ -98,150 +98,137 @@ export function DeployPanel({ nodes, edges }: Props) {
   }
 
   const usagePercent = stats ? Math.round((stats.compressedSize / 8000) * 100) : 0
-  const usageWidth = stats ? Math.min((stats.compressedSize / 8000) * 100, 100) : 0
 
   return (
-    <div className="vce-panel vce-panel--deploy">
-      <div className="vce-panel-header">
-        <span>Deploy to Fastly</span>
-        <button className="vce-panel-close" onClick={() => setIsOpen(false)}>×</button>
-      </div>
+    <Box className="vce-panel vce-panel--deploy">
+      <Flex className="vce-panel-header" justify="space-between" align="center">
+        <Text size="sm" weight="bold">Deploy to Fastly</Text>
+        <Button variant="subtle" size="compact-sm" onClick={() => setIsOpen(false)}>
+          <IconClose width={14} height={14} />
+        </Button>
+      </Flex>
 
-      <div className="vce-panel-body">
+      <Stack className="vce-panel-body" gap="md">
         {/* Service Config */}
-        <div className="vce-panel-section">
-          <div className="vce-panel-section-title">Service Configuration</div>
-          <div className="vce-mb-3">
-            <TextInput
-              label="Service Name"
-              value={config.name}
-              onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
-            />
-          </div>
-          <div>
-            <TextInput
-              label="Config Store Name"
-              value={config.configStoreName}
-              onChange={(e) => setConfig(prev => ({ ...prev, configStoreName: e.target.value }))}
-            />
-          </div>
-        </div>
+        <Stack className="vce-panel-section" gap="sm">
+          <Text size="sm" weight="bold">Service Configuration</Text>
+          <TextInput
+            label="Service Name"
+            value={config.name}
+            onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
+            size="sm"
+          />
+          <TextInput
+            label="Config Store Name"
+            value={config.configStoreName}
+            onChange={(e) => setConfig(prev => ({ ...prev, configStoreName: e.target.value }))}
+            size="sm"
+          />
+        </Stack>
 
         {/* Backend Config */}
-        <div className="vce-panel-section">
-          <div className="vce-panel-section-title">Backend (Protected Origin)</div>
+        <Stack className="vce-panel-section" gap="sm">
+          <Text size="sm" weight="bold">Backend (Protected Origin)</Text>
           {config.backends.map((backend, idx) => (
-            <div key={idx}>
-              <div className="vce-mb-3">
-                <TextInput
-                  label="Backend Name"
-                  value={backend.name}
-                  onChange={(e) => updateBackend(idx, 'name', e.target.value)}
-                />
-              </div>
-              <div className="vce-mb-3">
-                <TextInput
-                  label="Host"
-                  value={backend.host}
-                  onChange={(e) => updateBackend(idx, 'host', e.target.value)}
-                  placeholder="origin.example.com"
-                />
-              </div>
-              <Flex alignItems="center" gap="sm">
+            <Stack key={idx} gap="sm">
+              <TextInput
+                label="Backend Name"
+                value={backend.name}
+                onChange={(e) => updateBackend(idx, 'name', e.target.value)}
+                size="sm"
+              />
+              <TextInput
+                label="Host"
+                value={backend.host}
+                onChange={(e) => updateBackend(idx, 'host', e.target.value)}
+                placeholder="origin.example.com"
+                size="sm"
+              />
+              <Flex align="center" gap="sm">
                 <Switch
                   checked={backend.useTls ?? true}
-                  onChange={(checked) => updateBackend(idx, 'useTls', checked)}
+                  onChange={(e) => updateBackend(idx, 'useTls', e.currentTarget.checked)}
+                  size="sm"
                 />
                 <Text size="sm">Use TLS (HTTPS)</Text>
               </Flex>
-            </div>
+            </Stack>
           ))}
-        </div>
+        </Stack>
 
         {/* Actions */}
-        <div className="vce-panel-section">
-          <Button variant="primary" onClick={handlePack} className="vce-btn-full-width">
-            Pack Rules
-          </Button>
-        </div>
+        <Button onClick={handlePack} fullWidth>
+          Pack Rules
+        </Button>
 
         {/* Validation Errors */}
         {errors.length > 0 && (
-          <div className="vce-panel-section">
-            <Alert status="error">
-              <p className="vce-panel-error-title">Validation Errors</p>
-              {errors.map((err, i) => (
-                <p key={i} className="vce-panel-error-item">• {err}</p>
-              ))}
-            </Alert>
-          </div>
+          <Alert variant="error" title="Validation Errors">
+            {errors.map((err, i) => (
+              <Text key={i} size="xs">• {err}</Text>
+            ))}
+          </Alert>
         )}
 
         {/* Compression Stats */}
         {stats && (
-          <div className="vce-panel-section">
-            <div className="vce-panel-stats">
-              <div className="vce-panel-stats-title">Compression Stats</div>
+          <Stack className="vce-panel-stats" gap="sm">
+            <Text size="sm" weight="bold">Compression Stats</Text>
 
-              <div className="vce-panel-stat-row">
-                <span className="vce-text-muted vce-text-xs">Original:</span>
-                <span className="vce-text-xs">{stats.originalSize.toLocaleString()} bytes</span>
-              </div>
-              <div className="vce-panel-stat-row">
-                <span className="vce-text-muted vce-text-xs">Compressed:</span>
-                <span className="vce-text-xs">{stats.compressedSize.toLocaleString()} bytes</span>
-              </div>
-              <div className="vce-panel-stat-row vce-mb-3">
-                <span className="vce-text-muted vce-text-xs">Ratio:</span>
-                <Pill status="success" size="sm">{stats.compressionRatio}% smaller</Pill>
-              </div>
+            <Flex justify="space-between">
+              <Text size="xs">Original:</Text>
+              <Text size="xs">{stats.originalSize.toLocaleString()} bytes</Text>
+            </Flex>
+            <Flex justify="space-between">
+              <Text size="xs">Compressed:</Text>
+              <Text size="xs">{stats.compressedSize.toLocaleString()} bytes</Text>
+            </Flex>
+            <Flex justify="space-between" align="center">
+              <Text size="xs">Ratio:</Text>
+              <Pill variant="success">{stats.compressionRatio}% smaller</Pill>
+            </Flex>
 
-              {/* Config Store Usage Meter */}
-              <div className="vce-mb-3">
-                <div className="vce-panel-stat-row vce-mb-1">
-                  <span className="vce-text-muted vce-text-xs">Config Store Usage</span>
-                  <span className="vce-text-xs">{usagePercent}% of 8KB</span>
-                </div>
-                <div className="vce-progress-bar">
-                  <div
-                    className="vce-progress-fill"
-                    data-complete={stats.fitsInConfigStore && stats.compressedSize <= 6400}
-                    data-warning={stats.fitsInConfigStore && stats.compressedSize > 6400}
-                    data-error={!stats.fitsInConfigStore}
-                    style={{ width: `${usageWidth}%` }}
-                  />
-                </div>
-                <p className="vce-text-muted vce-text-xs vce-mt-1">
-                  {stats.fitsInConfigStore
-                    ? stats.compressedSize > 6400
-                      ? 'Approaching limit - consider simplifying rules'
-                      : 'Plenty of room for more rules'
-                    : 'Exceeds 8KB limit - reduce rule complexity'}
-                </p>
-              </div>
+            {/* Config Store Usage Meter */}
+            <Box>
+              <Flex justify="space-between" style={{ marginBottom: '8px' }}>
+                <Text size="xs">Config Store Usage</Text>
+                <Text size="xs">{usagePercent}% of 8KB</Text>
+              </Flex>
+              <Progress
+                value={usagePercent}
+                color={!stats.fitsInConfigStore ? 'red' : stats.compressedSize > 6400 ? 'yellow' : 'green'}
+                size="sm"
+              />
+              <Text size="xs" style={{ marginTop: '8px' }}>
+                {stats.fitsInConfigStore
+                  ? stats.compressedSize > 6400
+                    ? 'Approaching limit - consider simplifying rules'
+                    : 'Plenty of room for more rules'
+                  : 'Exceeds 8KB limit - reduce rule complexity'}
+              </Text>
+            </Box>
 
-              {stats.fitsInConfigStore && (
-                <Flex gap="sm">
-                  <Button variant="secondary" size="sm" onClick={handleExportConfigStore}>
-                    Export Config Store JSON
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={handleExportFastlyToml}>
-                    Export fastly.toml
-                  </Button>
-                </Flex>
-              )}
-            </div>
-          </div>
+            {stats.fitsInConfigStore && (
+              <Flex gap="sm">
+                <Button variant="outline" size="sm" onClick={handleExportConfigStore}>
+                  Export Config Store JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportFastlyToml}>
+                  Export fastly.toml
+                </Button>
+              </Flex>
+            )}
+          </Stack>
         )}
 
         {/* Info */}
-        <Alert status="info">
-          <span className="vce-text-xs">
+        <Alert variant="action">
+          <Text size="xs">
             Rules are compressed using gzip and base64 encoded to maximize storage efficiency.
             Config Store limit: 8,000 characters per value.
-          </span>
+          </Text>
         </Alert>
-      </div>
-    </div>
+      </Stack>
+    </Box>
   )
 }

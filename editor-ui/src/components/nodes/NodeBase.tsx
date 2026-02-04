@@ -1,6 +1,6 @@
 import { Handle, Position, NodeResizer } from '@xyflow/react'
 import { useState, type ReactNode } from 'react'
-import { Box, Flex, Text, Select, Switch, TextInput, type SelectOptionType } from '@fastly/beacon'
+import { Box, Flex, Text, Select, Switch, TextInput, Textarea } from '@fastly/beacon-mantine'
 import { IconHelp } from '@fastly/beacon-icons'
 
 type PortDef = {
@@ -28,7 +28,6 @@ type NodeBaseProps = {
 const HEADER_HEIGHT = 38
 const PORT_ROW_HEIGHT = 28
 const PORT_SECTION_PADDING = 8
-const HANDLE_SIZE = 12
 
 export function NodeBase({
   title,
@@ -78,12 +77,12 @@ export function NodeBase({
       <Flex
         className="vce-node-header"
         onClick={() => setCollapsed(!collapsed)}
-        alignItems="center"
-        justifyContent="space-between"
+        align="center"
+        justify="space-between"
       >
-        <Flex alignItems="center" gap="xs">
+        <Flex align="center" gap="xs">
           <Text size="xs" className="vce-node-collapse-icon">{collapsed ? '▸' : '▾'}</Text>
-          <Text size="sm" weight="semibold" className="vce-node-title">{title}</Text>
+          <Text size="sm" weight="bold" className="vce-node-title">{title}</Text>
         </Flex>
         {docUrl && (
           <a
@@ -129,7 +128,7 @@ export function NodeBase({
         <Box className="vce-node-body">
           {/* Port labels - rows must match handle positions */}
           {maxPorts > 0 && (
-            <Flex className="vce-port-rows" justifyContent="space-between">
+            <Flex className="vce-port-rows" justify="space-between">
               {/* Left ports labels */}
               <Box className="vce-port-column vce-port-column--left">
                 {inputs.map((port) => (
@@ -170,8 +169,8 @@ export function NodeField({
   children: ReactNode
 }) {
   return (
-    <Box className="vce-node-field" marginBottom="xs">
-      <Text as="label" size="xs" color="muted" className="vce-node-field-label">
+    <Box className="vce-node-field" mb="xs">
+      <Text component="label" size="xs" className="vce-node-field-label">
         {label}
       </Text>
       <Box className="vce-node-field-input">{children}</Box>
@@ -188,71 +187,27 @@ export function NodeSelect({
   onChange: (value: string) => void
   options: { value: string; label: string }[]
 }) {
-  const selectedOption = options.find(opt => opt.value === value) || null
-
   // Wrapper with nodrag class + event stopping prevents React Flow from intercepting
   return (
-    <div
-      className="nodrag nopan"
+    <Box
+      className="nodrag nopan vce-node-select-wrapper"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      onFocus={(e) => e.stopPropagation()}
     >
       <Select
-        value={selectedOption}
-        onChange={(option) => {
-          if (option) {
-            onChange((option as SelectOptionType).value)
-          }
-        }}
-        options={options}
-        menuPortalTarget={document.body}
-        menuPosition="fixed"
-        menuShouldBlockScroll={true}
-        blurInputOnSelect={true}
-        isSearchable={false}
-        classNamePrefix="vce-select"
+        value={value}
+        onChange={(val) => val && onChange(val)}
+        data={options}
+        size="xs"
+        searchable={false}
         className="vce-node-select-beacon"
-        styles={{
-          control: (base) => ({
-            ...base,
-            minHeight: '28px',
-            fontSize: '12px',
-          }),
-          valueContainer: (base) => ({
-            ...base,
-            padding: '0 6px',
-          }),
-          input: (base) => ({
-            ...base,
-            margin: 0,
-            padding: 0,
-          }),
-          indicatorsContainer: (base) => ({
-            ...base,
-            height: '28px',
-          }),
-          menu: (base) => ({
-            ...base,
-            zIndex: 9999,
-            width: 'max-content',
-            minWidth: '100%',
-            maxWidth: '300px',
-          }),
-          menuList: (base) => ({
-            ...base,
-            maxHeight: '200px',
-          }),
-          option: (base) => ({
-            ...base,
-            fontSize: '12px',
-            padding: '6px 10px',
-          }),
+        comboboxProps={{
+          withinPortal: true,
+          zIndex: 9999,
         }}
       />
-    </div>
+    </Box>
   )
 }
 
@@ -268,7 +223,7 @@ export function NodeInput({
   type?: 'text' | 'number'
 }) {
   return (
-    <div
+    <Box
       className="nodrag nopan vce-node-input-wrapper"
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -277,9 +232,10 @@ export function NodeInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         type={type}
+        size="xs"
         className="vce-node-input-beacon"
       />
-    </div>
+    </Box>
   )
 }
 
@@ -294,14 +250,14 @@ export function NodeCheckbox({
 }) {
   return (
     <Flex
-      alignItems="center"
+      align="center"
       gap="xs"
       className="nodrag nopan vce-node-checkbox"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <Switch
         checked={checked}
-        onChange={onChange}
+        onChange={(e) => onChange(e.currentTarget.checked)}
         size="sm"
       />
       <Text size="xs">{label}</Text>
@@ -325,14 +281,14 @@ export function NodeSection({
       <Flex
         className="vce-node-section-header"
         onClick={() => setIsOpen(!isOpen)}
-        alignItems="center"
+        align="center"
         gap="xs"
       >
         <Text size="xs" className="vce-node-section-icon">{isOpen ? '▾' : '▸'}</Text>
-        <Text size="xs" weight="semibold" className="vce-node-section-title">{title}</Text>
+        <Text size="xs" weight="bold" className="vce-node-section-title">{title}</Text>
       </Flex>
       {isOpen && (
-        <Box className="vce-node-section-content" paddingLeft="sm">
+        <Box className="vce-node-section-content" pl="sm">
           {children}
         </Box>
       )}
@@ -353,23 +309,21 @@ export function NodeTextarea({
   minRows?: number
   maxRows?: number
 }) {
-  // Calculate rows based on content
-  const lineCount = (value || '').split('\n').length
-  const estimatedWrapLines = Math.ceil((value || '').length / 25)
-  const rows = Math.min(maxRows, Math.max(minRows, lineCount, estimatedWrapLines))
-
   return (
-    <div
+    <Box
       className="nodrag nopan"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <textarea
+      <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        rows={rows}
+        minRows={minRows}
+        maxRows={maxRows}
+        autosize
+        size="xs"
         className="vce-node-textarea"
       />
-    </div>
+    </Box>
   )
 }
