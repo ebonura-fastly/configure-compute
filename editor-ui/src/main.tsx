@@ -9,10 +9,6 @@ import './styles/tokens.css'
 import './styles/nodes.css'
 import './index.css'
 
-// Initialize theme before React renders to prevent flash
-import { initializeTheme } from './styles/theme'
-initializeTheme()
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BeaconProvider>

@@ -297,9 +297,10 @@
 }
 
 /* ===========================================
- * Dark Theme - aligned with Uniform admin theme
+ * Dark Theme - aligned with Uniform (beacon-mantine)
+ * Uses body[data-prefers-color-scheme="dark"] to match useColorScheme hook
  * =========================================== */
-[data-theme="dark"] {
+body[data-prefers-color-scheme="dark"] {
   /* Backgrounds */
   --bg-primary: var(--color-gray-100);
   --bg-secondary: var(--color-gray-90);
