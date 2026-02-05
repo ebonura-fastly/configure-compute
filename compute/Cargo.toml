@@ -1,5 +1,5 @@
 [package]
-name = "configure-compute-engine"
+name = "configure-compute"
 version = "0.1.8"
 authors = ["Fastly"]
 edition = "2021"
@@ -11,7 +11,7 @@ name = "configure-compute"
 path = "src/main.rs"
 
 [lib]
-name = "configure_compute_engine"
+name = "configure_compute"
 path = "src/lib.rs"
 
 [profile.release]
