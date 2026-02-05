@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -26,6 +26,7 @@ import { ConditionNode, ActionNode, RequestNode, RateLimitNode, TransformNode, B
 import { DeletableEdge } from './components/edges'
 import { Sidebar } from './components/Sidebar'
 import { VCEHeader } from './components/VCEHeader'
+import { toCanonicalGraph } from './types/graph'
 
 const nodeTypes: NodeTypes = {
   request: RequestNode,
@@ -139,6 +140,10 @@ function Flow() {
     setEdges(newEdges)
   }, [])
 
+  // Compute canonical graph (strips React Flow runtime fields like measured, selected)
+  // This is used for hashing and deployment - only includes stable node/edge data
+  const canonicalGraph = useMemo(() => toCanonicalGraph(nodes, edges), [nodes, edges])
+
   // Ctrl/Cmd+A to select all nodes
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -172,6 +177,7 @@ function Flow() {
         <Sidebar
           nodes={nodes}
           edges={edges}
+          canonicalGraph={canonicalGraph}
           onAddTemplate={handleAddTemplate}
           onLoadRules={handleLoadRules}
           routeServiceId={serviceId}

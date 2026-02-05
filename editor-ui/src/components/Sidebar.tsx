@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { Node, Edge } from '@xyflow/react'
+import type { CanonicalGraph } from '../types/graph'
 import {
   Button,
   Box,
@@ -27,6 +28,7 @@ import { allTemplates, instantiateTemplate, type RuleTemplate } from '../templat
 type SidebarProps = {
   nodes: Node[]
   edges: Edge[]
+  canonicalGraph: CanonicalGraph
   onAddTemplate: (nodes: Node[], edges: Edge[]) => void
   onLoadRules?: (nodes: Node[], edges: Edge[]) => void
   routeServiceId?: string
@@ -109,7 +111,7 @@ const categoryLabels: Record<string, string> = {
   routing: 'Routing',
 }
 
-export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules, routeServiceId, isLocalRoute, onNavigate }: SidebarProps) {
+export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRules, routeServiceId, isLocalRoute, onNavigate }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>('fastly')
 
   // Templates state
@@ -212,6 +214,7 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules, routeService
           <FastlyTab
             nodes={nodes}
             edges={edges}
+            canonicalGraph={canonicalGraph}
             onLoadRules={onLoadRules}
             fastlyState={fastlyState}
             setFastlyState={setFastlyState}
@@ -729,6 +732,7 @@ type LocalModeState = {
 function FastlyTab({
   nodes,
   edges,
+  canonicalGraph,
   onLoadRules,
   fastlyState,
   setFastlyState,
@@ -740,6 +744,7 @@ function FastlyTab({
 }: {
   nodes: Node[]
   edges: Edge[]
+  canonicalGraph: CanonicalGraph
   onLoadRules?: (nodes: Node[], edges: Edge[]) => void
   fastlyState: FastlyState
   setFastlyState: React.Dispatch<React.SetStateAction<FastlyState>>
@@ -788,11 +793,11 @@ function FastlyTab({
   const [currentGraphHash, setCurrentGraphHash] = useState<string | null>(null)
   const [shouldCaptureDeployedHash, setShouldCaptureDeployedHash] = useState(false)
 
-  // Compute current graph hash when nodes/edges change
-  // Also capture deployed hash when flagged (ensures both use same React state)
+  // Compute current graph hash when canonical graph changes
+  // Uses canonicalGraph which already has React Flow internal fields stripped
   useEffect(() => {
-    const computeHashes = async () => {
-      if (nodes.length === 0 && edges.length === 0) {
+    const computeHash = async () => {
+      if (canonicalGraph.nodes.length === 0 && canonicalGraph.edges.length === 0) {
         setCurrentGraphHash(null)
         if (shouldCaptureDeployedHash) {
           setDeployedRulesHash(null)
@@ -801,23 +806,7 @@ function FastlyTab({
         return
       }
       try {
-        // Strip React Flow internal fields that change after rendering (measured, selected, dragging, etc.)
-        // Only include stable fields: id, type, position, data
-        const stableNodes = nodes.map(node => ({
-          id: node.id,
-          type: node.type,
-          position: node.position,
-          data: node.data,
-        }))
-        const stableEdges = edges.map(edge => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          sourceHandle: edge.sourceHandle,
-          targetHandle: edge.targetHandle,
-        }))
-        const graphPayload = { nodes: stableNodes, edges: stableEdges }
-        const compressed = await compressRules(JSON.stringify(graphPayload))
+        const compressed = await compressRules(JSON.stringify(canonicalGraph))
         const hash = await computeRulesHash(compressed)
         setCurrentGraphHash(hash)
 
@@ -830,8 +819,8 @@ function FastlyTab({
         setCurrentGraphHash(null)
       }
     }
-    computeHashes()
-  }, [nodes, edges, shouldCaptureDeployedHash])
+    computeHash()
+  }, [canonicalGraph, shouldCaptureDeployedHash])
 
   // Determine if graph has been modified since last load/deploy
   const isGraphModified = deployedRulesHash !== null && currentGraphHash !== null && deployedRulesHash !== currentGraphHash
@@ -946,8 +935,8 @@ function FastlyTab({
     setError(null)
 
     try {
-      const graphPayload = { nodes, edges }
-      const compressed = await compressRules(JSON.stringify(graphPayload))
+      // Use canonical graph (no React Flow internal fields) for deployment
+      const compressed = await compressRules(JSON.stringify(canonicalGraph))
       const fileContent = { rules_packed: compressed }
 
       const response = await fetch(`${LOCAL_API_URL}/rules`, {
@@ -1769,10 +1758,10 @@ function FastlyTab({
     setDeployProgress(null)
 
     try {
-      const graphPayload = { nodes, edges }
-      console.log('[Deploy] Nodes count:', nodes.length)
-      console.log('[Deploy] Edges count:', edges.length)
-      const compressed = await compressRules(JSON.stringify(graphPayload))
+      // Use canonical graph (no React Flow internal fields) for deployment
+      console.log('[Deploy] Nodes count:', canonicalGraph.nodes.length)
+      console.log('[Deploy] Edges count:', canonicalGraph.edges.length)
+      const compressed = await compressRules(JSON.stringify(canonicalGraph))
       console.log('[Deploy] Compressed length:', compressed.length)
 
       const expectedHash = await computeRulesHash(compressed)
