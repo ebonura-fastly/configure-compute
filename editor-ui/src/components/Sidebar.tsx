@@ -180,7 +180,7 @@ export function Sidebar({ nodes, edges, onAddTemplate, onLoadRules, routeService
     <aside className="vce-sidebar">
       {isActive ? (
         <Tabs value={activeTab} onChange={(v) => setActiveTab(v as Tab)} className="vce-sidebar-tabs-container">
-          <Tabs.List className="vce-sidebar-tabs">
+          <Tabs.List grow className="vce-sidebar-tabs">
             {tabs.map((tab) => (
               <Tabs.Tab key={tab.id} value={tab.id} className="vce-sidebar-tab">
                 {tab.label}

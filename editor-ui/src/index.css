@@ -52,6 +52,16 @@
   border-bottom: 1px solid var(--COLOR--border--primary);
 }
 
+.vce-sidebar-tabs {
+  display: flex;
+  width: 100%;
+}
+
+.vce-sidebar-tab {
+  flex: 1;
+  justify-content: center;
+}
+
 .vce-sidebar-content {
   flex: 1;
   overflow-y: auto;
