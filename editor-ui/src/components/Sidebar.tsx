@@ -131,6 +131,7 @@ export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRul
     sharedStoreId: null,
     engineVersion: null,
     engineVersionLoading: false,
+    serviceDomain: null,
   })
 
   // Local development mode state - lifted up to persist across tab switches
@@ -459,6 +460,7 @@ type FastlyService = {
   name: string
   type: string
   version: number
+  domain?: string
   isVceEnabled?: boolean
   linkedConfigStore?: string
 }
@@ -490,47 +492,6 @@ const FASTLY_API_BASE = 'https://api.fastly.com'
 const STORAGE_KEY = 'vce-fastly'
 const VCE_SHARED_STORE_NAME = 'vce-shared-rules'
 
-interface EdgeCheckResult {
-  totalPops: number
-  successPops: number
-  failedPops: number
-  percent: number
-  allSuccess: boolean
-}
-
-async function checkEdgePropagation(
-  serviceUrl: string,
-  apiToken: string
-): Promise<EdgeCheckResult> {
-  const response = await fetch(
-    `${FASTLY_API_BASE}/content/edge_check?url=${encodeURIComponent(serviceUrl)}`,
-    { headers: { 'Fastly-Key': apiToken } }
-  )
-
-  if (!response.ok) {
-    throw new Error(`Edge check failed: ${response.status}`)
-  }
-
-  const data = await response.json() as Array<{
-    pop: string
-    response: { status: number }
-    hash: string
-  }>
-
-  const totalPops = data.length
-  const successPops = data.filter(p => p.response?.status === 200).length
-  const failedPops = totalPops - successPops
-  const percent = Math.floor((successPops / totalPops) * 100)
-
-  return {
-    totalPops,
-    successPops,
-    failedPops,
-    percent,
-    allSuccess: failedPops === 0
-  }
-}
-
 function loadStoredSettings(): { apiToken: string; selectedService: string; selectedConfigStore: string } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -557,6 +518,23 @@ function generateDomainName(serviceName: string): string {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
   return `${sanitized}.edgecompute.app`
+}
+
+// Fetch the actual domain from a service's active version
+async function getServiceDomain(
+  serviceId: string,
+  version: number,
+  fastlyFetch: (endpoint: string, options?: RequestInit) => Promise<unknown>
+): Promise<string | null> {
+  try {
+    const domains = await fastlyFetch(`/service/${serviceId}/version/${version}/domain`) as Array<{ name: string }>
+    if (domains.length > 0) {
+      return domains[0].name
+    }
+  } catch (err) {
+    console.log('[Domain] Failed to fetch domain:', err)
+  }
+  return null
 }
 
 async function findOrCreateConfigStore(
@@ -637,6 +615,7 @@ type FastlyState = {
   selectedService: string
   selectedConfigStore: string
   sharedStoreId: string | null  // ID of vce-shared-rules store, null if doesn't exist
+  serviceDomain: string | null  // Cached domain for selected service
   engineVersion: EngineVersion
   engineVersionLoading: boolean
 }
@@ -674,7 +653,7 @@ function FastlyTab({
   isLocalRoute?: boolean
   onNavigate?: (path: string) => void
 }) {
-  const { apiToken, isConnected, services, configStores, selectedService, selectedConfigStore, sharedStoreId, engineVersion, engineVersionLoading } = fastlyState
+  const { apiToken, isConnected, services, configStores, selectedService, selectedConfigStore, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
   const { localMode, localServerAvailable, localComputeRunning, localEngineVersion, hasLoadedRules } = localModeState
 
   const updateLocalModeState = (updates: Partial<LocalModeState>) => {
@@ -686,6 +665,9 @@ function FastlyTab({
   }
   const setEngineVersionLoading = (loading: boolean) => {
     setFastlyState(prev => ({ ...prev, engineVersionLoading: loading }))
+  }
+  const setServiceDomain = (domain: string | null) => {
+    setFastlyState(prev => ({ ...prev, serviceDomain: domain }))
   }
 
   const [loading, setLoading] = useState(false)
@@ -969,11 +951,19 @@ function FastlyTab({
     return response.json()
   }, [apiToken])
 
-  const fetchEngineVersion = useCallback(async (serviceName: string) => {
+  const fetchEngineVersion = useCallback(async (serviceName: string, serviceId?: string, version?: number) => {
     setEngineVersionLoading(true)
 
     try {
-      const domain = generateDomainName(serviceName)
+      // Try to get actual domain from service, fall back to generated name
+      let domain = generateDomainName(serviceName)
+      if (serviceId && version && apiToken) {
+        const actualDomain = await getServiceDomain(serviceId, version, fastlyFetch)
+        if (actualDomain) {
+          domain = actualDomain
+          setServiceDomain(actualDomain)
+        }
+      }
       const url = `https://${domain}/_version`
       console.log('[Version] Fetching from:', url)
 
@@ -1004,7 +994,7 @@ function FastlyTab({
     } finally {
       setEngineVersionLoading(false)
     }
-  }, [])
+  }, [apiToken, fastlyFetch])
 
   const handleUpdateEngine = async () => {
     const service = services.find(s => s.id === selectedService)
@@ -1079,54 +1069,48 @@ function FastlyTab({
       const activateResult = await fastlyFetch(`/service/${service.id}/version/${newVersionNumber}/activate`, { method: 'PUT' })
       console.log('[Engine Update] Version activated:', activateResult)
 
-      setStatus(`VCE Engine deployed, checking global propagation...`)
-      console.log('[Engine Update] Update complete! Checking edge propagation...')
+      setStatus(`VCE Engine deployed, verifying...`)
+      console.log('[Engine Update] Update complete! Verifying deployment...')
 
-      const domain = generateDomainName(service.name)
+      // Get actual domain from the service and cache it
+      const actualDomain = await getServiceDomain(service.id, newVersionNumber, fastlyFetch)
+      const domain = actualDomain || generateDomainName(service.name)
+      if (actualDomain) {
+        setServiceDomain(actualDomain)
+      }
+      console.log('[Engine Update] Using domain:', domain)
       const serviceUrl = `https://${domain}/_version`
-      const maxAttempts = 60
+      const maxAttempts = 30
       const pollInterval = 2000
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        setEngineUpdateProgress(`Verifying deployment (${attempt}/${maxAttempts})...`)
+
         try {
-          const edgeStatus = await checkEdgePropagation(serviceUrl, apiToken)
-          console.log(`[Engine Update] Edge check ${attempt}/${maxAttempts}:`, edgeStatus)
+          const versionResponse = await fetch(serviceUrl, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          })
 
-          setEngineUpdateProgress(
-            `Propagating to edge: ${edgeStatus.successPops}/${edgeStatus.totalPops} POPs (${edgeStatus.percent}%)`
-          )
+          if (versionResponse.ok) {
+            const versionData = await versionResponse.json()
+            console.log(`[Engine Update] Version check ${attempt}/${maxAttempts}:`, versionData)
 
-          if (edgeStatus.percent >= 95) {
-            console.log('[Engine Update] Edge propagation complete!')
-
-            setEngineUpdateProgress('Verifying engine version...')
-            const versionResponse = await fetch(serviceUrl, {
-              method: 'GET',
-              headers: { 'Accept': 'application/json' },
-              cache: 'no-store',
-            })
-
-            if (versionResponse.ok) {
-              const versionData = await versionResponse.json()
-              if (versionData.engine === 'Visual Compute Engine' && versionData.version === VCE_ENGINE_VERSION) {
-                setEngineVersion(versionData)
-                setEngineUpdateProgress(null)
-                setStatus(`VCE Engine v${VCE_ENGINE_VERSION} deployed to ${edgeStatus.successPops} POPs globally!`)
-                setLoading(false)
-                return
-              }
+            if (versionData.engine === 'Visual Compute Engine' && versionData.version === VCE_ENGINE_VERSION) {
+              setEngineVersion(versionData)
+              setEngineUpdateProgress(null)
+              setStatus(`VCE Engine v${VCE_ENGINE_VERSION} deployed!`)
+              setLoading(false)
+              return
+            } else {
+              console.log('[Engine Update] Version mismatch, waiting for propagation...')
             }
-
-            setEngineUpdateProgress(null)
-            setStatus(`Engine deployed to ${edgeStatus.successPops}/${edgeStatus.totalPops} POPs`)
-            await fetchEngineVersion(service.name)
-            setLoading(false)
-            return
+          } else {
+            console.log(`[Engine Update] Version check ${attempt}/${maxAttempts}: ${versionResponse.status}`)
           }
         } catch (pollErr) {
-          const errMsg = pollErr instanceof Error ? pollErr.message : 'Unknown error'
-          setEngineUpdateProgress(`Checking propagation (${attempt}/${maxAttempts}): ${errMsg}`)
-          console.log('[Engine Update] Edge check error:', pollErr)
+          console.log(`[Engine Update] Version check ${attempt}/${maxAttempts}: error`, pollErr)
         }
 
         if (attempt < maxAttempts) {
@@ -1134,10 +1118,10 @@ function FastlyTab({
         }
       }
 
-      console.log('[Engine Update] Propagation check timeout')
+      console.warn('[Engine Update] Verification timed out after', maxAttempts, 'attempts')
       setEngineUpdateProgress(null)
-      setStatus('Engine deployed (propagation still in progress)')
-      await fetchEngineVersion(service.name)
+      setStatus('Engine deployed (verification timed out)')
+      await fetchEngineVersion(service.name, service.id, newVersionNumber)
       setLoading(false)
 
     } catch (err) {
@@ -1224,9 +1208,15 @@ function FastlyTab({
       let serviceToSelect = selectedService
       let storeToSelect = ''
 
-      // Select service and store
+      // Priority: 1) URL route service ID, 2) previously selected, 3) first VCE service
+      const routeService = routeServiceId ? computeServices.find(s => s.id === routeServiceId) : null
       const previousService = computeServices.find(s => s.id === selectedService && s.isVceEnabled)
-      if (previousService) {
+
+      if (routeService) {
+        // URL specifies a service - use it
+        serviceToSelect = routeService.id
+        storeToSelect = routeService.linkedConfigStore || ''
+      } else if (previousService) {
         storeToSelect = previousService.linkedConfigStore || ''
       } else if (vceServices.length > 0) {
         serviceToSelect = vceServices[0].id
@@ -1254,7 +1244,7 @@ function FastlyTab({
       const serviceVersion = computeServices.find(s => s.id === serviceToSelect)?.version || 1
       if (serviceName) {
         console.log('[Connect] Fetching engine version for:', serviceName)
-        fetchEngineVersion(serviceName)
+        fetchEngineVersion(serviceName, serviceToSelect, serviceVersion)
 
         // Check actual resource link and store it for display
         const actualLink = await getServiceConfigStoreLink(serviceToSelect, serviceVersion, fastlyFetch)
@@ -1350,6 +1340,7 @@ function FastlyTab({
       selectedService: '',
       selectedConfigStore: '',
       sharedStoreId: null,
+      serviceDomain: null,
     })
     setStatus(null)
     saveSettings({ apiToken: '', selectedService: '', selectedConfigStore: '' })
@@ -1366,6 +1357,8 @@ function FastlyTab({
     const service = services.find(s => s.id === serviceId)
     const linkedStore = service?.linkedConfigStore || ''
     console.log('[Load] Linked store:', linkedStore)
+    // Clear cached domain when service changes - will be re-fetched
+    setServiceDomain(null)
     updateFastlyState({
       selectedService: serviceId,
       selectedConfigStore: linkedStore,
@@ -1377,7 +1370,7 @@ function FastlyTab({
 
     if (service?.name) {
       console.log('[ServiceChange] Fetching engine version for:', service.name)
-      fetchEngineVersion(service.name)
+      fetchEngineVersion(service.name, service.id, service.version)
     } else {
       console.log('[ServiceChange] No service name found for:', serviceId)
     }
@@ -1789,20 +1782,33 @@ function FastlyTab({
       })
 
       const storeName = configStores.find(s => s.id === sharedStoreId)?.name
-      const serviceName = services.find(s => s.id === selectedService)?.name
+      const service = services.find(s => s.id === selectedService)
       console.log('[Deploy] Config Store updated, starting verification...')
       setStatus(`Deployed to ${storeName}, verifying...`)
       setDeployStatus('verifying')
       setDeployProgress('Waiting for edge propagation...')
 
-      const domain = generateDomainName(serviceName || '')
+      // Use cached domain, or fetch it, or fall back to generated name
+      let domain = serviceDomain
+      if (!domain && service) {
+        const fetchedDomain = await getServiceDomain(service.id, service.version, fastlyFetch)
+        if (fetchedDomain) {
+          domain = fetchedDomain
+          setServiceDomain(fetchedDomain)
+        }
+      }
+      domain = domain || generateDomainName(service?.name || '')
+      console.log('[Deploy] Using domain for verification:', domain)
       const maxAttempts = 60
       const pollInterval = 2000
       const verifyStartTime = Date.now()
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          setDeployProgress(`Waiting for Config Store to propagate... (${attempt}/${maxAttempts})`)
+          // Only show progress after first attempt - avoids flash on quick verify
+          if (attempt > 1) {
+            setDeployProgress(`Verifying (${attempt}/${maxAttempts})...`)
+          }
           console.log(`[Deploy] Verification attempt ${attempt}/${maxAttempts}...`)
           const versionResponse = await fetch(`https://${domain}/_version`, {
             method: 'GET',
@@ -1825,16 +1831,12 @@ function FastlyTab({
               setShouldCaptureDeployedHash(true)
               return
             } else {
-              const oldHash = versionData.rules_hash?.slice(0, 8) || 'none'
-              setDeployProgress(`Verifying (${attempt}/${maxAttempts})...`)
-              console.log(`[Deploy] Still propagating: edge has ${oldHash}, waiting for ${expectedHash.slice(0, 8)}`)
+              console.log(`[Deploy] Still propagating: edge has ${versionData.rules_hash?.slice(0, 8) || 'none'}, waiting for ${expectedHash.slice(0, 8)}`)
             }
           } else {
-            setDeployProgress(`Verifying (${attempt}/${maxAttempts})...`)
             console.log(`[Deploy] HTTP ${versionResponse.status}`)
           }
         } catch (pollErr) {
-          setDeployProgress(`Verifying (${attempt}/${maxAttempts})...`)
           console.log('[Deploy] Poll error:', pollErr)
         }
 
@@ -2169,7 +2171,8 @@ function FastlyTab({
       {selectedService && (() => {
         const service = services.find(s => s.id === selectedService)
         if (!service) return null
-        const serviceUrl = `https://${generateDomainName(service.name)}`
+        const displayDomain = serviceDomain || generateDomainName(service.name)
+        const serviceUrl = `https://${displayDomain}`
         const validation = validateGraph(nodes, edges)
         const canDeploy = validation.valid && sharedStoreId && selectedService
 
@@ -2201,7 +2204,7 @@ function FastlyTab({
                 <Flex align="center" justify="space-between">
                   <Text size="xs" className="vce-text-muted">Test URL</Text>
                   <Anchor href={serviceUrl} target="_blank" size="xs">
-                    {service.name}.edgecompute.app
+                    {displayDomain}
                   </Anchor>
                 </Flex>
 
@@ -2332,11 +2335,10 @@ function FastlyTab({
                     deployStatus === 'error' ? 'red' :
                     deployStatus === 'timeout' ? 'orange' :
                     !validation.valid ? 'gray' :
-                    isGraphInSync ? 'green' :
                     isGraphModified ? 'orange' : undefined
                   }
                   onClick={handleDeployRules}
-                  disabled={!canDeploy || deployStatus === 'deploying' || deployStatus === 'verifying'}
+                  disabled={!canDeploy || deployStatus === 'deploying' || deployStatus === 'verifying' || isGraphInSync}
                   fullWidth
                 >
                   {(deployStatus === 'deploying' || deployStatus === 'verifying') ? (
