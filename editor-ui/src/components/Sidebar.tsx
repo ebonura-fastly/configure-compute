@@ -783,6 +783,60 @@ function FastlyTab({
   const [configStoreStatus, setConfigStoreStatus] = useState<ConfigStoreStatus | null>(null)
   const [configStoreStatusLoading, setConfigStoreStatusLoading] = useState(false)
 
+  // Track deployed rules hash to detect modifications
+  const [deployedRulesHash, setDeployedRulesHash] = useState<string | null>(null)
+  const [currentGraphHash, setCurrentGraphHash] = useState<string | null>(null)
+  const [shouldCaptureDeployedHash, setShouldCaptureDeployedHash] = useState(false)
+
+  // Compute current graph hash when nodes/edges change
+  // Also capture deployed hash when flagged (ensures both use same React state)
+  useEffect(() => {
+    const computeHashes = async () => {
+      if (nodes.length === 0 && edges.length === 0) {
+        setCurrentGraphHash(null)
+        if (shouldCaptureDeployedHash) {
+          setDeployedRulesHash(null)
+          setShouldCaptureDeployedHash(false)
+        }
+        return
+      }
+      try {
+        // Strip React Flow internal fields that change after rendering (measured, selected, dragging, etc.)
+        // Only include stable fields: id, type, position, data
+        const stableNodes = nodes.map(node => ({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data,
+        }))
+        const stableEdges = edges.map(edge => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+        }))
+        const graphPayload = { nodes: stableNodes, edges: stableEdges }
+        const compressed = await compressRules(JSON.stringify(graphPayload))
+        const hash = await computeRulesHash(compressed)
+        setCurrentGraphHash(hash)
+
+        // If flagged, also set this as the deployed hash
+        if (shouldCaptureDeployedHash) {
+          setDeployedRulesHash(hash)
+          setShouldCaptureDeployedHash(false)
+        }
+      } catch {
+        setCurrentGraphHash(null)
+      }
+    }
+    computeHashes()
+  }, [nodes, edges, shouldCaptureDeployedHash])
+
+  // Determine if graph has been modified since last load/deploy
+  const isGraphModified = deployedRulesHash !== null && currentGraphHash !== null && deployedRulesHash !== currentGraphHash
+  const isGraphInSync = deployedRulesHash !== null && currentGraphHash !== null && deployedRulesHash === currentGraphHash
+
   // Sync URL with local mode - navigate to /local when entering local mode
   useEffect(() => {
     if (isLocalRoute && !localMode && localServerAvailable) {
@@ -1334,32 +1388,41 @@ function FastlyTab({
             console.log('[Load] Using new graph format - nodes:', graphData.nodes.length, 'edges:', graphData.edges.length)
             onLoadRules(graphData.nodes, graphData.edges)
             setStatus(`Loaded ${graphData.nodes.length} nodes from ${serviceName}`)
+            // Flag to capture deployed hash from React state after render
+            setShouldCaptureDeployedHash(true)
           } else if (graphData.r && graphData.d) {
             console.log('[Load] Using old packed rules format')
             const { nodes: loadedNodes, edges: loadedEdges } = convertComputeRulesToGraph(graphData as PackedRules)
             if (loadedNodes.length > 0) {
               onLoadRules(loadedNodes, loadedEdges)
               setStatus(`Loaded ${loadedNodes.length} nodes from ${serviceName}`)
+              // Flag to capture deployed hash from React state after render
+              setShouldCaptureDeployedHash(true)
             } else {
               onLoadRules([], [])
               setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+              setDeployedRulesHash(null)
             }
           } else {
             onLoadRules([], [])
             setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+            setDeployedRulesHash(null)
           }
         } else {
           onLoadRules([], [])
           setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+          setDeployedRulesHash(null)
         }
       } else {
         onLoadRules([], [])
         setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+        setDeployedRulesHash(null)
       }
     } catch (err) {
       console.error('[Load] Error:', err)
       onLoadRules([], [])
       setStatus(`Selected ${serviceName}`)
+      setDeployedRulesHash(null)
     }
   }
 
@@ -1789,6 +1852,8 @@ function FastlyTab({
               setDeployProgress(null)
               setEngineVersion(versionData)
               setStatus(`Deployed and verified in ${elapsedSec}s (${versionData.nodes_count} nodes, ${versionData.edges_count} edges)`)
+              // Mark current graph as in sync - use flag to capture from same React state
+              setShouldCaptureDeployedHash(true)
               return
             } else {
               const oldHash = versionData.rules_hash?.slice(0, 8) || 'none'
@@ -2148,6 +2213,12 @@ function FastlyTab({
                     </ActionIcon>
                   </Flex>
                 </Box>
+
+                {status && status.includes('Loaded') && (
+                  <Text size="xs" className="vce-text-muted" style={{ marginTop: 4 }}>
+                    {status}
+                  </Text>
+                )}
               </Stack>
             </Card>
           </Box>
@@ -2376,10 +2447,12 @@ function FastlyTab({
         <Card withBorder radius="md" padding={0}>
           <Card.Section style={{ padding: '8px 12px', background: 'var(--COLOR--surface--secondary)' }}>
             <Flex align="center" gap="sm">
-              <Pill variant="default">3</Pill>
+              <Pill variant={isGraphInSync ? 'success' : isGraphModified ? 'caution' : 'default'}>3</Pill>
               <Box>
                 <Title order={5}>Deploy Rules</Title>
-                <Text size="xs" className="vce-text-muted">Push graph to edge (~30-40s)</Text>
+                <Text size="xs" className="vce-text-muted">
+                  {isGraphInSync ? 'In sync with service' : isGraphModified ? 'Changes pending deploy' : 'Push graph to edge (~30-40s)'}
+                </Text>
               </Box>
             </Flex>
           </Card.Section>
@@ -2458,7 +2531,7 @@ function FastlyTab({
       {error && (
         <Alert variant="error" icon={<IconAttentionFilled width={16} height={16} />}>{error}</Alert>
       )}
-      {status && !error && (
+      {status && !error && !status.includes('Loaded') && (
         <Alert variant="success" icon={<IconCheckCircleFilled width={16} height={16} />}>{status}</Alert>
       )}
     </Box>
