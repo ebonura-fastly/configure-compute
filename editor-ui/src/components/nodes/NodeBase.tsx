@@ -163,9 +163,11 @@ export function NodeBase({
 // Form field components for inline editing
 export function NodeField({
   label,
+  hint,
   children
 }: {
   label: string
+  hint?: string
   children: ReactNode
 }) {
   return (
@@ -174,6 +176,11 @@ export function NodeField({
         {label}
       </Text>
       <Box className="vce-node-field-input">{children}</Box>
+      {hint && (
+        <Text size="xs" className="vce-node-field-hint">
+          {hint}
+        </Text>
+      )}
     </Box>
   )
 }

@@ -66,7 +66,7 @@ export function HeaderNode({ id, data, selected }: NodeProps) {
         />
       </NodeField>
 
-      <NodeField label="Header">
+      <NodeField label="Header" hint="e.g., X-Custom-Header">
         <NodeInput
           value={name}
           onChange={(v) => updateData('name', v)}
@@ -76,7 +76,7 @@ export function HeaderNode({ id, data, selected }: NodeProps) {
 
       {/* Show value field only for set/append operations */}
       {operation !== 'remove' && (
-        <NodeField label="Value">
+        <NodeField label="Value" hint="Static value or variable">
           <NodeInput
             value={nodeData.value || ''}
             onChange={(v) => updateData('value', v)}

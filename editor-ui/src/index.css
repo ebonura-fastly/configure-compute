@@ -49,7 +49,6 @@
 
 .vce-sidebar-tabs-container {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--COLOR--border--primary);
 }
 
 .vce-sidebar-tabs {
@@ -60,7 +59,24 @@
 .vce-sidebar-tab {
   flex: 1;
   justify-content: center;
-  padding: var(--LAYOUT--spacing--4) 0 !important;
+  padding: var(--LAYOUT--spacing--3) var(--LAYOUT--spacing--2) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  border-bottom: 2px solid transparent !important;
+    color: var(--COLOR--text--secondary) !important;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.vce-sidebar-tab:hover {
+  color: var(--COLOR--text--primary) !important;
+  background: var(--COLOR--surface--secondary) !important;
+}
+
+.vce-sidebar-tab[data-active="true"] {
+  color: var(--COLOR--error--text) !important;
+  border-bottom-color: var(--COLOR--error--text) !important;
+  background: rgba(255, 40, 45, 0.08) !important;
 }
 
 .vce-sidebar-content {
@@ -289,4 +305,24 @@
 
 .vce-text-muted {
   color: var(--COLOR--text--disabled);
+}
+
+/* ===========================================
+ * Filter Icon & Popover
+ * =========================================== */
+
+.vce-filter-icon {
+  padding: var(--LAYOUT--spacing--1);
+  border-radius: var(--LAYOUT--border-radius--sm);
+  transition: background 130ms ease-in-out;
+}
+
+.vce-filter-icon:hover {
+  background: var(--COLOR--surface--secondary);
+}
+
+/* Ensure popover dropdown uses correct theme colors */
+.mantine-Popover-dropdown {
+  background: var(--COLOR--surface--primary) !important;
+  border-color: var(--COLOR--border--primary) !important;
 }

@@ -127,6 +127,36 @@ const operatorOptions = [
   { value: 'notExists', label: 'not exists' },
 ]
 
+// Get contextual hint text based on field and operator
+function getValueHint(field: string, operator: string): string | undefined {
+  // Operator-specific hints
+  if (operator === 'matches') {
+    return 'Use regex: ^/api/.* or \\.(jpg|png)$'
+  }
+  if (operator === 'in' || operator === 'notIn') {
+    return 'One value per line'
+  }
+  if (operator === 'inCidr' || operator === 'notInCidr') {
+    return 'e.g., 192.168.0.0/16 or 10.0.0.0/8'
+  }
+
+  // Field-specific hints
+  switch (field) {
+    case 'path':
+      return 'e.g., /api/v1/* or /users'
+    case 'method':
+      return 'GET, POST, PUT, DELETE, etc.'
+    case 'country':
+      return 'ISO 3166-1 alpha-2: US, GB, DE'
+    case 'clientIp':
+      return 'IPv4 or IPv6 address'
+    case 'asn':
+      return 'Autonomous System Number'
+    default:
+      return undefined
+  }
+}
+
 export function ConditionNode({ id, data, selected }: NodeProps) {
   const nodeData = data as ConditionNodeData
   const { setNodes } = useReactFlow()
@@ -218,7 +248,7 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
             />
           </NodeField>
 
-          <NodeField label="Value">
+          <NodeField label="Value" hint={getValueHint(currentField, nodeData.operator || 'equals')}>
             <NodeTextarea
               value={nodeData.value || ''}
               onChange={(v) => updateData('value', v)}

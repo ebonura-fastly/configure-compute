@@ -198,14 +198,28 @@
   margin-bottom: var(--LAYOUT--spacing--1);
 }
 
+.vce-node-field-hint {
+  display: block;
+  margin-top: var(--LAYOUT--spacing--1);
+  color: var(--COLOR--text--tertiary);
+  font-size: var(--TYPOGRAPHY--type--font-size--xs);
+  line-height: 1.3;
+}
+
 /* Compact inputs for nodes */
 .vce-node-input-wrapper,
 .vce-node-select-wrapper {
   width: 100%;
 }
 
+/* Ensure consistent font size across all node form inputs */
 .vce-node-input-beacon input,
-.vce-node-select-beacon input {
+.vce-node-input-beacon [class*="mantine-Input-input"],
+.vce-node-select-beacon input,
+.vce-node-select-beacon [class*="mantine-Select-input"],
+.vce-node-select-beacon [class*="mantine-Input-input"],
+.vce-node-textarea textarea,
+.vce-node-textarea [class*="mantine-Textarea-input"] {
   min-height: 28px !important;
   font-size: var(--TYPOGRAPHY--type--font-size--xs) !important;
 }

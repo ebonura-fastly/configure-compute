@@ -54,7 +54,7 @@ export function RateLimitNode({ id, data, selected }: NodeProps) {
       width={200}
       docUrl="https://docs.fastly.com/products/edge-rate-limiting"
     >
-      <NodeField label="Limit">
+      <NodeField label="Limit" hint="Max requests allowed">
         <NodeInput
           value={limit}
           onChange={(v) => updateData('limit', parseInt(v) || 0)}
@@ -63,7 +63,7 @@ export function RateLimitNode({ id, data, selected }: NodeProps) {
         />
       </NodeField>
 
-      <NodeField label="Window">
+      <NodeField label="Window" hint="Time window for counting">
         <NodeSelect
           value={windowUnit}
           onChange={(v) => updateData('windowUnit', v)}
@@ -71,7 +71,7 @@ export function RateLimitNode({ id, data, selected }: NodeProps) {
         />
       </NodeField>
 
-      <NodeField label="Key By">
+      <NodeField label="Key By" hint="Group requests by this field">
         <NodeSelect
           value={keyBy}
           onChange={(v) => updateData('keyBy', v)}
@@ -80,7 +80,7 @@ export function RateLimitNode({ id, data, selected }: NodeProps) {
       </NodeField>
 
       {keyBy === 'header' && (
-        <NodeField label="Header">
+        <NodeField label="Header" hint="Header name to use as key">
           <NodeInput
             value={nodeData.headerName || ''}
             onChange={(v) => updateData('headerName', v)}

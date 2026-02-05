@@ -44,61 +44,61 @@ const nodeTypes = [
     type: 'request',
     label: 'Request',
     category: 'input' as const,
-    description: 'Entry point',
+    description: 'Starting point for all incoming requests. Connect to conditions or actions.',
   },
   {
     type: 'condition',
     label: 'Condition',
     category: 'condition' as const,
-    description: 'Check request fields',
+    description: 'Evaluate request properties like path, IP, headers, geo location, and more.',
   },
   {
     type: 'ruleGroup',
     label: 'Rule Group',
     category: 'logic' as const,
-    description: 'Multiple conditions with AND/OR',
+    description: 'Combine multiple conditions using AND/OR logic for complex matching.',
   },
   {
     type: 'rateLimit',
     label: 'Rate Limit',
     category: 'condition' as const,
-    description: 'Throttle requests',
+    description: 'Limit requests per second/minute/hour. Group by IP, fingerprint, or header.',
   },
   {
     type: 'transform',
     label: 'Transform',
     category: 'routing' as const,
-    description: 'Modify values',
+    description: 'Transform request values: lowercase, trim, URL encode/decode, and more.',
   },
   {
     type: 'backend',
     label: 'Backend',
     category: 'routing' as const,
-    description: 'Route to origin',
+    description: 'Route requests to a specific origin server or backend service.',
   },
   {
     type: 'header',
     label: 'Header',
     category: 'routing' as const,
-    description: 'Set, append, or remove headers',
+    description: 'Modify HTTP headers on requests or responses.',
   },
   {
     type: 'cache',
     label: 'Cache',
     category: 'routing' as const,
-    description: 'Control cache TTL and behavior',
+    description: 'Configure caching: TTL, stale-while-revalidate, cache key, and bypass.',
   },
   {
     type: 'logging',
     label: 'Logging',
     category: 'action' as const,
-    description: 'Stream logs to endpoint',
+    description: 'Send logs to BigQuery, S3, or other logging endpoints in real-time.',
   },
   {
     type: 'action',
     label: 'Action',
     category: 'action' as const,
-    description: 'Block, Allow, Challenge',
+    description: 'Terminal action: block with status code, allow through, or challenge.',
   },
 ]
 
@@ -248,7 +248,7 @@ function ComponentsTab({
   onDragStart: (event: React.DragEvent, nodeType: string) => void
 }) {
   return (
-    <Box className="vce-components-tab">
+    <Box className="vce-components-tab" p="sm">
       <Stack className="vce-node-list" gap="xs">
         {nodeTypes.map(({ type, label, category, description }) => (
           <Box
@@ -290,7 +290,7 @@ function TemplatesTab({
   onAddTemplate: (template: RuleTemplate) => void
 }) {
   const [filterOpen, setFilterOpen] = useState(false)
-  const filterButtonRef = useRef<HTMLButtonElement>(null)
+  const filterButtonRef = useRef<HTMLDivElement>(null)
 
   const activeFilterCount = selectedCategories.size
 
@@ -310,7 +310,7 @@ function TemplatesTab({
   }
 
   return (
-    <Box className="vce-templates-tab">
+    <Box className="vce-templates-tab" p="sm">
       {/* Search with Filter Icon */}
       <Flex className="vce-search-filter-row" gap="xs" align="center">
         <TextInput
@@ -343,26 +343,29 @@ function TemplatesTab({
           shadow="md"
         >
           <Popover.Target>
-            <ActionIcon
+            <Box
               ref={filterButtonRef}
-              variant={filterOpen || activeFilterCount > 0 ? 'filled' : 'outline'}
               onClick={() => setFilterOpen(!filterOpen)}
               aria-label="Filter templates"
-              className="vce-filter-button"
-              style={{ position: 'relative' }}
+              className="vce-filter-icon"
+              style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
-              <IconFilter width={14} height={14} />
+              <IconFilter
+                width={16}
+                height={16}
+                style={{ color: activeFilterCount > 0 ? 'var(--COLOR--action--text--primary)' : 'var(--COLOR--text--secondary)' }}
+              />
               {activeFilterCount > 0 && (
                 <Badge
                   size="xs"
                   variant="filled"
                   className="vce-filter-badge"
-                  style={{ position: 'absolute', top: -4, right: -4 }}
+                  style={{ position: 'absolute', top: -6, right: -8 }}
                 >
                   {activeFilterCount}
                 </Badge>
               )}
-            </ActionIcon>
+            </Box>
           </Popover.Target>
           <Popover.Dropdown>
             <Flex className="vce-filter-header" justify="space-between" align="center" style={{ marginBottom: '12px' }}>

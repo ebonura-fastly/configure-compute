@@ -207,6 +207,7 @@ function Flow() {
             selectNodesOnDrag={false}
             selectionKeyCode={['Shift']}
             multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
+            proOptions={{ hideAttribution: true }}
           >
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
             <Controls />
