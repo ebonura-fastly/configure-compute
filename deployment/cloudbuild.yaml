@@ -66,9 +66,9 @@ steps:
     args:
       - -c
       - |
-        SERVICE_NAME=$(grep '^  name:' deployment/run-service-generated.yaml | head -1 | awk '{print $2}')
-        echo "Enabling IAP on $SERVICE_NAME..."
-        gcloud beta run services update $SERVICE_NAME \
+        SVC_NAME=$$(grep '^  name:' deployment/run-service-generated.yaml | head -1 | awk '{print $$2}')
+        echo "Enabling IAP on $$SVC_NAME..."
+        gcloud beta run services update $$SVC_NAME \
           --region=$_REGION \
           --iap
 
