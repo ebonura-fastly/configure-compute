@@ -151,7 +151,7 @@ deploy-staging:
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
 	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
-	gcloud builds submit \
+	@gcloud builds submit \
 		--config=deployment/cloudbuild.yaml \
 		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=staging,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
 		--project=$(PROJECT_ID)
@@ -162,7 +162,7 @@ deploy-production:
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
 	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
-	gcloud builds submit \
+	@gcloud builds submit \
 		--config=deployment/cloudbuild.yaml \
 		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=production,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
 		--project=$(PROJECT_ID)

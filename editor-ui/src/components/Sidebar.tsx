@@ -694,7 +694,7 @@ function FastlyTab({
   isLocalRoute?: boolean
   onNavigate?: (path: string) => void
 }) {
-  const { apiToken, isConnected, services, configStores, selectedService, selectedConfigStore, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
+  const { apiToken, isConnected, services, configStores, selectedService, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
   const { localMode, localServerAvailable, localComputeRunning, localEngineVersion, hasLoadedRules } = localModeState
   const {
     loading, error, status, showCreateForm, createForm, createProgress,
