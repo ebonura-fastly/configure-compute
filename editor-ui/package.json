@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=server.js",
+    "start": "node server.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,16 +23,18 @@
     "@mantine/hooks": "^8.3.14",
     "@types/pako": "^2.0.4",
     "@xyflow/react": "^12.10.0",
+    "cc-core": "file:../core/pkg",
     "pako": "^2.1.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "react-router-dom": "^7.13.0",
-    "cc-core": "file:../core/pkg"
+    "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.19.9",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "hono": "^4.11.8",
     "typescript": "^5.9.3",
     "vite": "^7.2.7",
     "vite-plugin-wasm": "^3.5.0"

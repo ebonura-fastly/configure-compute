@@ -26,6 +26,7 @@ import {
 import { IconClose, IconSearch, IconFilter, IconLink, IconSync, IconCopy, IconUpload, IconAttentionFilled, IconCheckCircleFilled, IconDownload } from '@fastly/beacon-icons'
 import { allTemplates, instantiateTemplate, type RuleTemplate } from '../templates'
 import { useFastlyConnection } from '../hooks/useFastlyConnection'
+import { useToast } from '../hooks/useToast'
 
 type SidebarProps = {
   nodes: Node[]
@@ -150,7 +151,6 @@ export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRul
   const [fastlyTabState, setFastlyTabState] = useState({
     loading: false,
     error: null as string | null,
-    status: null as string | null,
     showCreateForm: false,
     createForm: { serviceName: '' },
     createProgress: null as string | null,
@@ -656,7 +656,6 @@ type LocalModeState = {
 type FastlyTabState = {
   loading: boolean
   error: string | null
-  status: string | null
   showCreateForm: boolean
   createForm: { serviceName: string }
   createProgress: string | null
@@ -704,7 +703,7 @@ function FastlyTab({
   const { apiToken, useSharedAccount, isConnected, services, configStores, selectedService, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
   const { localMode, localServerAvailable, localComputeRunning, localEngineVersion, hasLoadedRules } = localModeState
   const {
-    loading, error, status, showCreateForm, createForm, createProgress,
+    loading, error, showCreateForm, createForm, createProgress,
     engineUpdateProgress, deployStatus, deployProgress, resourceLinkInfo, fixingLink,
     deployedRulesHash, currentGraphHash, shouldCaptureDeployedHash
   } = fastlyTabState
@@ -720,7 +719,6 @@ function FastlyTab({
   // Helper setters for cleaner code
   const setLoading = (v: boolean) => updateTabState({ loading: v })
   const setError = (v: string | null) => updateTabState({ error: v })
-  const setStatus = (v: string | null) => updateTabState({ status: v })
   const setShowCreateForm = (v: boolean) => updateTabState({ showCreateForm: v })
   const setCreateForm = (v: { serviceName: string }) => updateTabState({ createForm: v })
   const setCreateProgress = (v: string | null) => updateTabState({ createProgress: v })
@@ -745,6 +743,7 @@ function FastlyTab({
 
   // Connection context — shares state with CCHeader badge
   const connection = useFastlyConnection()
+  const toast = useToast()
 
   // Track whether user requested personal token input (from header dropdown)
   const [showPersonalTokenInput, setShowPersonalTokenInput] = useState(false)
@@ -1006,7 +1005,7 @@ function FastlyTab({
       }
 
       const result = await response.json()
-      setStatus(result.message || 'Rules saved locally')
+      toast.show(result.message || 'Rules saved locally')
 
       try {
         const computeResponse = await fetch(`${LOCAL_API_URL}/compute-status`)
@@ -1103,7 +1102,7 @@ function FastlyTab({
           setServiceDomain(actualDomain)
         }
       }
-      const url = `https://${domain}/_version`
+      const url = `/edge-proxy/${domain}/_version`
       console.log('[Version] Fetching from:', url)
 
       const response = await fetch(url, {
@@ -1208,7 +1207,7 @@ function FastlyTab({
       const activateResult = await fastlyFetch(`/service/${service.id}/version/${newVersionNumber}/activate`, { method: 'PUT' })
       console.log('[Engine Update] Version activated:', activateResult)
 
-      setStatus(`Engine deployed, verifying...`)
+      toast.show('Engine deployed, verifying...')
       console.log('[Engine Update] Update complete! Verifying deployment...')
 
       // Get actual domain from the service and cache it
@@ -1218,7 +1217,7 @@ function FastlyTab({
         setServiceDomain(actualDomain)
       }
       console.log('[Engine Update] Using domain:', domain)
-      const serviceUrl = `https://${domain}/_version`
+      const serviceUrl = `/edge-proxy/${domain}/_version`
       const maxAttempts = 30
       const pollInterval = 2000
 
@@ -1239,7 +1238,7 @@ function FastlyTab({
             if (versionData.engine === 'Configure Compute' && versionData.version === CC_ENGINE_VERSION) {
               setEngineVersion(versionData)
               setEngineUpdateProgress(null)
-              setStatus(`Engine v${CC_ENGINE_VERSION} deployed!`)
+              toast.show(`Engine v${CC_ENGINE_VERSION} deployed!`)
               setLoading(false)
               return
             } else {
@@ -1259,7 +1258,7 @@ function FastlyTab({
 
       console.warn('[Engine Update] Verification timed out after', maxAttempts, 'attempts')
       setEngineUpdateProgress(null)
-      setStatus('Engine deployed (verification timed out)')
+      toast.show('Engine deployed (verification timed out)')
       await fetchEngineVersion(service.name, service.id, newVersionNumber)
       setLoading(false)
 
@@ -1490,28 +1489,28 @@ function FastlyTab({
           if (graphData.nodes && graphData.edges) {
             console.log('[Load] Loaded graph - nodes:', graphData.nodes.length, 'edges:', graphData.edges.length)
             onLoadRules(graphData.nodes, graphData.edges)
-            setStatus(`Loaded ${graphData.nodes.length} nodes from ${serviceName}`)
+            toast.show(`Loaded ${graphData.nodes.length} nodes from ${serviceName}`)
             // Flag to capture deployed hash from React state after render
             setShouldCaptureDeployedHash(true)
           } else {
             onLoadRules([], [])
-            setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+            toast.show(`Selected ${serviceName} (no rules deployed yet)`)
             setDeployedRulesHash(null)
           }
         } else {
           onLoadRules([], [])
-          setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+          toast.show(`Selected ${serviceName} (no rules deployed yet)`)
           setDeployedRulesHash(null)
         }
       } else {
         onLoadRules([], [])
-        setStatus(`Selected ${serviceName} (no rules deployed yet)`)
+        toast.show(`Selected ${serviceName} (no rules deployed yet)`)
         setDeployedRulesHash(null)
       }
     } catch (err) {
       console.error('[Load] Error:', err)
       onLoadRules([], [])
-      setStatus(`Selected ${serviceName}`)
+      toast.show(`Selected ${serviceName}`)
       setDeployedRulesHash(null)
     }
   }
@@ -1528,7 +1527,6 @@ function FastlyTab({
       sharedStoreId: null,
       serviceDomain: null,
     })
-    setStatus(null)
     saveSettings({ apiToken: '', selectedService: '', selectedConfigStore: '' })
     connection.setConnectionInfo({ mode: 'disconnected', isConnected: false, customerName: null, isConnecting: false })
     // Clear the canvas
@@ -1564,14 +1562,13 @@ function FastlyTab({
 
     if (linkedStore) {
       setLoading(true)
-      setStatus('Loading rules from Config Store...')
+      toast.show('Loading rules from Config Store...')
       await loadRulesFromStore(linkedStore, serviceId, service?.name || '')
       setLoading(false)
     } else if (service) {
       if (onLoadRules) {
         onLoadRules([], [])
       }
-      setStatus('')
     }
   }
 
@@ -1670,7 +1667,7 @@ function FastlyTab({
         sharedStoreId: configStoreId,
       })
       saveSettings({ apiToken, selectedService: service.id, selectedConfigStore: configStoreId })
-      setStatus(`Config Store linked to "${service.name}"!`)
+      toast.show(`Config Store linked to "${service.name}"!`)
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to setup Config Store')
@@ -1799,7 +1796,7 @@ function FastlyTab({
       saveSettings({ apiToken, selectedService: serviceId, selectedConfigStore: configStoreId })
       setShowCreateForm(false)
       setCreateForm({ serviceName: '' })
-      setStatus(`Service "${createForm.serviceName}" created successfully!`)
+      toast.show(`Service "${createForm.serviceName}" created successfully!`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Service creation failed')
     } finally {
@@ -1891,7 +1888,7 @@ function FastlyTab({
 
       // Update local state
       setResourceLinkInfo({ storeId: sharedStoreId, storeName: CC_SHARED_STORE_NAME })
-      setStatus('Resource link fixed successfully!')
+      toast.show('Resource link fixed successfully!')
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fix resource link')
@@ -1966,7 +1963,7 @@ function FastlyTab({
       const storeName = configStores.find(s => s.id === sharedStoreId)?.name
       const service = services.find(s => s.id === selectedService)
       console.log('[Deploy] Config Store updated, starting verification...')
-      setStatus(`Deployed to ${storeName}, verifying...`)
+      toast.show(`Deployed to ${storeName}, verifying...`)
       setDeployStatus('verifying')
       setDeployProgress('Waiting for edge propagation...')
 
@@ -1992,7 +1989,7 @@ function FastlyTab({
             setDeployProgress(`Verifying (${attempt}/${maxAttempts})...`)
           }
           console.log(`[Deploy] Verification attempt ${attempt}/${maxAttempts}...`)
-          const versionResponse = await fetch(`https://${domain}/_version`, {
+          const versionResponse = await fetch(`/edge-proxy/${domain}/_version`, {
             method: 'GET',
             headers: { 'Accept': 'application/json' },
             cache: 'no-store',
@@ -2008,7 +2005,7 @@ function FastlyTab({
               setDeployStatus('verified')
               setDeployProgress(null)
               setEngineVersion(versionData)
-              setStatus(`Deployed and verified in ${elapsedSec}s (${versionData.nodes_count} nodes, ${versionData.edges_count} edges)`)
+              toast.show(`Deployed and verified in ${elapsedSec}s (${versionData.nodes_count} nodes, ${versionData.edges_count} edges)`)
               // Mark current graph as in sync - use flag to capture from same React state
               setShouldCaptureDeployedHash(true)
               return
@@ -2031,7 +2028,7 @@ function FastlyTab({
       setDeployProgress(null)
       console.log(`[Deploy] Verification timeout after ${elapsedSec}s - rules may still be propagating`)
       setDeployStatus('timeout')
-      setStatus(`Deployed to ${storeName} - Config Store still propagating after ${elapsedSec}s, refresh in a few seconds`)
+      toast.show(`Deployed to ${storeName} - Config Store still propagating after ${elapsedSec}s, refresh in a few seconds`)
 
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Deployment failed'
@@ -2163,9 +2160,6 @@ function FastlyTab({
         {/* Status/Error Messages */}
         {error && (
           <Alert variant="error" icon={<IconAttentionFilled width={16} height={16} />}>{error}</Alert>
-        )}
-        {status && !error && (
-          <Alert variant="success" icon={<IconCheckCircleFilled width={16} height={16} />}>{status}</Alert>
         )}
       </Box>
     )
@@ -2553,9 +2547,6 @@ function FastlyTab({
       {/* Status/Error Messages - only show non-deployment messages */}
       {error && (
         <Alert variant="error" icon={<IconAttentionFilled width={16} height={16} />}>{error}</Alert>
-      )}
-      {status && !error && !status.includes('Loaded') && !status.includes('Deployed') && !status.includes('verifying') && (
-        <Alert variant="success" icon={<IconCheckCircleFilled width={16} height={16} />}>{status}</Alert>
       )}
     </Box>
   )

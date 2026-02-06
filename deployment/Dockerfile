@@ -1,7 +1,7 @@
 # Multi-stage build for Configure Compute editor-ui
 # Stage 1: Build cc-core WASM
-# Stage 2: Build editor-ui
-# Stage 3: Serve with nginx
+# Stage 2: Build editor-ui + Hono server
+# Stage 3: Serve with Node.js + Hono
 
 # ============================================================================
 # Stage 1: Build cc-core WASM with Rust + wasm-pack
@@ -50,20 +50,21 @@ COPY editor-ui/ ./
 # Build the production bundle
 RUN npm run build
 
-# ============================================================================
-# Stage 3: Production image with nginx
-# ============================================================================
-FROM nginx:alpine AS production
+# Bundle the Hono server into a single file (esbuild inlines all deps)
+RUN npx esbuild server.ts --bundle --platform=node --format=esm --outfile=server.js
 
-# Copy nginx config template (envsubst injects FASTLY_API_TOKEN at startup)
-COPY deployment/nginx.conf.template /etc/nginx/nginx.conf.template
+# ============================================================================
+# Stage 3: Production image with Node.js + Hono
+# ============================================================================
+FROM node:22-alpine AS production
 
-# Copy built static files
-COPY --from=ui-builder /build/editor-ui/dist /usr/share/nginx/html
+WORKDIR /app
+
+# Copy the bundled server and built static files
+COPY --from=ui-builder /build/editor-ui/server.js ./server.js
+COPY --from=ui-builder /build/editor-ui/dist ./dist
 
 # Cloud Run uses port 8080
 EXPOSE 8080
 
-# At startup: inject FASTLY_API_TOKEN into nginx config, then start nginx.
-# Restricted variable list ensures nginx's own $variables are untouched.
-CMD ["/bin/sh", "-c", "envsubst '${FASTLY_API_TOKEN}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+CMD ["node", "server.js"]

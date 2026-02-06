@@ -28,6 +28,7 @@ import { Sidebar } from './components/Sidebar'
 import { CCHeader } from './components/CCHeader'
 import { toCanonicalGraph } from './types/graph'
 import { FastlyConnectionProvider } from './hooks/useFastlyConnection'
+import { ToastProvider } from './hooks/useToast'
 
 const nodeTypes: NodeTypes = {
   request: RequestNode,
@@ -257,11 +258,13 @@ function Flow() {
 function AppRoutes() {
   return (
     <div className="cc-app">
-      <FastlyConnectionProvider>
-        <ReactFlowProvider>
-          <Flow />
-        </ReactFlowProvider>
-      </FastlyConnectionProvider>
+      <ToastProvider>
+        <FastlyConnectionProvider>
+          <ReactFlowProvider>
+            <Flow />
+          </ReactFlowProvider>
+        </FastlyConnectionProvider>
+      </ToastProvider>
     </div>
   )
 }

@@ -1,7 +1,8 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import wasm from 'vite-plugin-wasm'
 import { execSync } from 'child_process'
+import { request as httpsRequest } from 'node:https'
 
 /**
  * Fetch the shared Fastly API token from GCP Secret Manager using local gcloud auth.
@@ -19,13 +20,45 @@ function getSharedToken(): string | null {
   }
 }
 
+/**
+ * Vite plugin: reverse-proxy /edge-proxy/<domain>/<path> → https://<domain>/<path>
+ * Mirrors the nginx location block so deployment verification avoids CORS.
+ */
+function edgeProxyPlugin(): Plugin {
+  return {
+    name: 'edge-proxy',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.startsWith('/edge-proxy/')) return next()
+
+        const rest = req.url.slice('/edge-proxy/'.length)
+        const slashIdx = rest.indexOf('/')
+        if (slashIdx === -1) { res.statusCode = 400; res.end('Bad request'); return }
+
+        const domain = rest.slice(0, slashIdx)
+        const path = rest.slice(slashIdx)
+
+        const proxyReq = httpsRequest(
+          { hostname: domain, path, method: req.method || 'GET', headers: { ...req.headers, host: domain } },
+          (proxyRes) => {
+            res.writeHead(proxyRes.statusCode || 502, proxyRes.headers)
+            proxyRes.pipe(res)
+          },
+        )
+        proxyReq.on('error', () => { res.statusCode = 502; res.end('Edge proxy error') })
+        req.pipe(proxyReq)
+      })
+    },
+  }
+}
+
 export default defineConfig(({ command }) => {
   // Only fetch token during dev serve, not during build
   const sharedToken = command === 'serve' ? getSharedToken() : null
   if (sharedToken) console.log('[vite] Shared Fastly token loaded from Secret Manager')
 
   return {
-    plugins: [react(), wasm()],
+    plugins: [react(), wasm(), edgeProxyPlugin()],
     // Expose whether the shared token was loaded (never expose the token itself)
     define: {
       '__SHARED_TOKEN_AVAILABLE__': JSON.stringify(!!sharedToken),

@@ -26,3 +26,6 @@
 # Node.js
 node_modules/
 dist/
+
+# esbuild output (built from server.ts)
+editor-ui/server.js
