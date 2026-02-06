@@ -508,7 +508,7 @@ type CcPayload = {
 }
 
 const CC_ENGINE_VERSION = '0.1.8'
-const FASTLY_API_BASE = 'https://api.fastly.com'
+const FASTLY_API_BASE = import.meta.env.DEV ? 'https://api.fastly.com' : '/fastly-api'
 const STORAGE_KEY = 'cc-fastly'
 const CC_SHARED_STORE_NAME = 'cc-shared-rules'
 
@@ -2091,16 +2091,20 @@ function FastlyTab({
           </Box>
         )}
 
-        <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
-          <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
-          <Text size="xs" className="cc-text-muted">OR</Text>
-          <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
-        </Flex>
+        {import.meta.env.DEV && (
+          <>
+            <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
+              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
+              <Text size="xs" className="cc-text-muted">OR</Text>
+              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
+            </Flex>
 
-        {/* Local Dev Mode button */}
-        <Button variant="outline" onClick={checkLocalEnvironment} leftSection={<IconCode width={16} height={16} />} style={{ width: '100%' }}>
-          Use Local Dev Mode
-        </Button>
+            {/* Local Dev Mode button - only shown in local development */}
+            <Button variant="outline" onClick={checkLocalEnvironment} leftSection={<IconCode width={16} height={16} />} style={{ width: '100%' }}>
+              Use Local Dev Mode
+            </Button>
+          </>
+        )}
       </Box>
     )
   }

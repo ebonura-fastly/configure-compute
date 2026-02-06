@@ -122,7 +122,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "configure-compute-engine"
+name = "configure-compute"
 version = "0.1.8"
 dependencies = [
  "base64",
