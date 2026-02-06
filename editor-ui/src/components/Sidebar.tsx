@@ -510,7 +510,7 @@ type CcPayload = {
 const CC_ENGINE_VERSION = '0.1.8'
 const FASTLY_API_BASE = import.meta.env.DEV ? 'https://api.fastly.com' : '/fastly-api'
 const STORAGE_KEY = 'cc-fastly'
-const CC_SHARED_STORE_NAME = 'cc-shared-rules'
+const CC_SHARED_STORE_NAME = 'cc_shared_rules'
 
 function loadStoredSettings(): { apiToken: string; selectedService: string; selectedConfigStore: string } {
   try {
