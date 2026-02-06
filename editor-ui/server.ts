@@ -27,20 +27,26 @@ app.all('/fastly-api/*', async (c) => {
   const path = c.req.path.replace(/^\/fastly-api/, '')
   const url = `https://api.fastly.com${path}`
 
-  const headers = new Headers(c.req.raw.headers)
+  // Build clean headers — don't forward hop-by-hop or IAP headers
+  const headers = new Headers()
+  headers.set('Host', 'api.fastly.com')
+  const fwdHeaders = ['accept', 'content-type', 'fastly-key']
+  for (const key of fwdHeaders) {
+    const val = c.req.header(key)
+    if (val) headers.set(key, val)
+  }
   // Use client's Fastly-Key if present, otherwise inject server-side token
   if (!headers.get('fastly-key') && FASTLY_API_TOKEN) {
     headers.set('Fastly-Key', FASTLY_API_TOKEN)
   }
-  headers.set('Host', 'api.fastly.com')
-  headers.delete('accept-encoding')
 
   const body = ['GET', 'HEAD'].includes(c.req.method)
     ? undefined
     : await c.req.arrayBuffer()
 
   const resp = await fetch(url, { method: c.req.method, headers, body })
-  return new Response(resp.body, { status: resp.status, headers: resp.headers })
+  // Copy into mutable headers so downstream middleware can modify them
+  return new Response(resp.body, { status: resp.status, headers: new Headers(resp.headers) })
 })
 
 // Edge proxy — CORS bypass for deployment verification
@@ -55,7 +61,7 @@ app.all('/edge-proxy/:domain{[^/]+}/*', async (c) => {
     headers: { Host: domain },
     signal: AbortSignal.timeout(10_000),
   })
-  return new Response(resp.body, { status: resp.status, headers: resp.headers })
+  return new Response(resp.body, { status: resp.status, headers: new Headers(resp.headers) })
 })
 
 // Static files — hashed assets get immutable cache headers

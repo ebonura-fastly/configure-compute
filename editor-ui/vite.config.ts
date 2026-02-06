@@ -59,9 +59,10 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins: [react(), wasm(), edgeProxyPlugin()],
-    // Expose whether the shared token was loaded (never expose the token itself)
+    // In production builds, the Hono server always has the token from Cloud Run secrets.
+    // In dev, it depends on whether gcloud fetched it successfully.
     define: {
-      '__SHARED_TOKEN_AVAILABLE__': JSON.stringify(!!sharedToken),
+      '__SHARED_TOKEN_AVAILABLE__': JSON.stringify(command === 'build' || !!sharedToken),
     },
     server: {
       port: 5174,

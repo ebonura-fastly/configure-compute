@@ -2203,9 +2203,11 @@ function FastlyTab({
             ) : (
               <Alert variant="caution" icon={<IconAttentionFilled width={16} height={16} />} style={{ marginBottom: '12px' }}>
                 <Text size="xs">
-                  Shared Fastly token not available. Run{' '}
-                  <code style={{ fontSize: '0.85em' }}>gcloud auth application-default login</code>{' '}
-                  to enable it, or enter your own API token below.
+                  Shared token not available.{' '}
+                  {import.meta.env.DEV
+                    ? <>Run <code style={{ fontSize: '0.85em' }}>gcloud auth application-default login</code> to enable it, or enter</>
+                    : <>Enter</>
+                  }{' '}your own API token below.
                 </Text>
               </Alert>
             )}
