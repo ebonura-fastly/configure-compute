@@ -58,6 +58,20 @@ steps:
           --region=$_REGION \
           --platform=managed
 
+  # Re-enable IAP after deploy (services replace resets annotations)
+  - name: gcr.io/cloud-builders/gcloud
+    id: enable-iap
+    waitFor: ['deploy-service']
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        SERVICE_NAME=$(grep '^  name:' deployment/run-service-generated.yaml | head -1 | awk '{print $2}')
+        echo "Enabling IAP on $SERVICE_NAME..."
+        gcloud beta run services update $SERVICE_NAME \
+          --region=$_REGION \
+          --iap
+
 # Push images to Artifact Registry
 images:
   - us-central1-docker.pkg.dev/$PROJECT_ID/configure-compute/configure-compute-editor:$SHORT_SHA
