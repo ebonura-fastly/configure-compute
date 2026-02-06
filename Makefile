@@ -151,10 +151,11 @@ deploy-staging:
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
 	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
-	@gcloud builds submit \
+	gcloud beta builds submit \
 		--config=deployment/cloudbuild.yaml \
 		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=staging,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
-		--project=$(PROJECT_ID)
+		--project=$(PROJECT_ID) \
+		--verbosity=info
 
 deploy-production:
 	@echo "Deploying to Cloud Run (production)..."
@@ -162,10 +163,11 @@ deploy-production:
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
 	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
-	@gcloud builds submit \
+	gcloud beta builds submit \
 		--config=deployment/cloudbuild.yaml \
 		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=production,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
-		--project=$(PROJECT_ID)
+		--project=$(PROJECT_ID) \
+		--verbosity=info
 
 # ============================================================================
 # LOCAL DEMO MODE

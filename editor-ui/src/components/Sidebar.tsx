@@ -855,6 +855,10 @@ function FastlyTab({
     const request = connection.pendingRequest
     connection.clearPendingRequest()
 
+    // Always clear canvas immediately so stale nodes don't persist
+    // New rules will be loaded async by connectToFastly/checkLocalEnvironment
+    onLoadRules?.([], [])
+
     if (request === 'personal') {
       updateLocalModeState({ localMode: false })
       updateFastlyState({ isConnected: false, useSharedAccount: false })
@@ -1439,9 +1443,12 @@ function FastlyTab({
         console.log('[Connect] No service name found for:', serviceToSelect)
       }
 
-      // Load rules from store if available
+      // Load rules from store if available, otherwise clear canvas
       if (storeToSelect && onLoadRules) {
         await loadRulesFromStore(storeToSelect, serviceToSelect, serviceName)
+      } else if (onLoadRules) {
+        onLoadRules([], [])
+        setDeployedRulesHash(null)
       }
 
       // Navigate to the selected service
@@ -1772,9 +1779,10 @@ function FastlyTab({
         return res.json()
       })
 
+      const serviceName = createForm.serviceName
       const newService: FastlyService = {
         id: serviceId,
-        name: createForm.serviceName,
+        name: serviceName,
         type: 'wasm',
         version: serviceVersion,
         isCcEnabled: true,
@@ -1794,9 +1802,57 @@ function FastlyTab({
         sharedStoreId: configStoreId,
       })
       saveSettings({ apiToken, selectedService: serviceId, selectedConfigStore: configStoreId })
+      setResourceLinkInfo({ storeId: configStoreId, storeName: CC_SHARED_STORE_NAME })
       setShowCreateForm(false)
       setCreateForm({ serviceName: '' })
-      toast.show(`Service "${createForm.serviceName}" created successfully!`)
+      navigateToService(serviceId)
+      toast.show(`Service "${serviceName}" created, verifying engine...`)
+
+      // Poll for engine readiness — the service was just activated and needs time to propagate
+      setCreateProgress('Waiting for engine to become available...')
+      setServiceDomain(domain)
+      const serviceUrl = `/edge-proxy/${domain}/_version`
+      const maxAttempts = 30
+      const pollInterval = 2000
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        setCreateProgress(`Verifying engine (${attempt}/${maxAttempts})...`)
+
+        try {
+          const versionResponse = await fetch(serviceUrl, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+          })
+
+          if (versionResponse.ok) {
+            const versionData = await versionResponse.json()
+            console.log(`[Create] Engine check ${attempt}/${maxAttempts}:`, versionData)
+
+            if (versionData.engine === 'Configure Compute' && versionData.version === CC_ENGINE_VERSION) {
+              setEngineVersion(versionData)
+              toast.show(`Service "${serviceName}" ready! Engine v${CC_ENGINE_VERSION} deployed.`)
+              setCreateProgress(null)
+              setLoading(false)
+              return
+            }
+          } else {
+            console.log(`[Create] Engine check ${attempt}/${maxAttempts}: ${versionResponse.status}`)
+          }
+        } catch (pollErr) {
+          console.log(`[Create] Engine check ${attempt}/${maxAttempts}: error`, pollErr)
+        }
+
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+      }
+
+      // Timeout — engine may still be propagating
+      console.warn('[Create] Engine verification timed out')
+      setCreateProgress(null)
+      toast.show(`Service "${serviceName}" created (engine still propagating, refresh in a few seconds)`)
+      await fetchEngineVersion(serviceName, serviceId, serviceVersion)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Service creation failed')
     } finally {
@@ -2005,7 +2061,7 @@ function FastlyTab({
               setDeployStatus('verified')
               setDeployProgress(null)
               setEngineVersion(versionData)
-              toast.show(`Deployed and verified in ${elapsedSec}s (${versionData.nodes_count} nodes, ${versionData.edges_count} edges)`)
+              toast.show(`Deployed and verified in ${elapsedSec}s (${versionData.nodes_count} node${versionData.nodes_count === 1 ? '' : 's'}, ${versionData.edges_count} edge${versionData.edges_count === 1 ? '' : 's'})`)
               // Mark current graph as in sync - use flag to capture from same React state
               setShouldCaptureDeployedHash(true)
               return
@@ -2050,7 +2106,7 @@ function FastlyTab({
             <Card.Section style={{ padding: '4px 12px', background: 'var(--COLOR--surface--secondary)' }}>
               <Flex justify="space-between" align="center">
                 <Title order={5}>Local Server</Title>
-                <ActionIcon variant="subtle" onClick={handleRefreshLocal} disabled={loading}>
+                <ActionIcon variant="subtle" onClick={handleRefreshLocal} loading={loading}>
                   <IconSync width={16} height={16} />
                 </ActionIcon>
               </Flex>
@@ -2116,8 +2172,8 @@ function FastlyTab({
                 <Text size="sm"><Text span weight="bold">{edges.length}</Text> <Text span className="cc-text-muted">edges</Text></Text>
               </Flex>
 
-              <Button variant="filled" leftSection={<IconUpload width={16} height={16} />} onClick={handleDeployLocal} disabled={loading} fullWidth>
-                {loading ? 'Saving...' : 'Save Rules Locally'}
+              <Button variant="filled" leftSection={<IconUpload width={16} height={16} />} onClick={handleDeployLocal} disabled={loading} loading={loading} fullWidth>
+                Save Rules Locally
               </Button>
 
               {localComputeRunning && (
@@ -2282,21 +2338,18 @@ function FastlyTab({
                 />
               </Box>
 
-              {createProgress && (
-                <Text size="xs" style={{ fontFamily: 'monospace', marginBottom: '12px' }}>{createProgress}</Text>
-              )}
-
-              <Text size="xs" className="cc-text-muted" style={{ marginBottom: '12px' }}>
-                Service creation takes 1-2 minutes.
-              </Text>
-
               <Button
                 variant="filled"
                 onClick={handleCreateService}
                 disabled={loading || !createForm.serviceName}
                 fullWidth
               >
-                {loading ? 'Creating...' : 'Create Service'}
+                {createProgress ? (
+                  <Flex align="center" gap="xs" justify="center">
+                    <Loader size="xs" color="white" />
+                    <Text size="xs" style={{ color: 'white', whiteSpace: 'nowrap' }}>{createProgress}</Text>
+                  </Flex>
+                ) : 'Create Service'}
               </Button>
             </Box>
           </Card>
@@ -2337,17 +2390,18 @@ function FastlyTab({
           />
         )}
 
-        {/* Warning only when deploying will make destructive changes */}
+        {/* Warning only when deploying will make destructive changes to an existing service */}
         {selectedService && (
-          // Show warning if engine needs deploying OR config store link needs changing
-          (engineVersion?.version !== CC_ENGINE_VERSION || resourceLinkInfo?.storeName !== CC_SHARED_STORE_NAME)
+          // Only warn when we have actual info showing a mismatch — null means not yet loaded
+          (engineVersion && engineVersion.version !== CC_ENGINE_VERSION) ||
+          (resourceLinkInfo && resourceLinkInfo.storeName !== CC_SHARED_STORE_NAME)
         ) && (
           <Alert variant="caution" icon={<IconAttentionFilled width={16} height={16} />} style={{ marginTop: 8 }}>
             <Text size="xs">
               <strong>Warning:</strong> Deploying will{' '}
-              {engineVersion?.version !== CC_ENGINE_VERSION && 'replace this service\'s WASM binary'}
-              {engineVersion?.version !== CC_ENGINE_VERSION && resourceLinkInfo?.storeName !== CC_SHARED_STORE_NAME && ' and '}
-              {resourceLinkInfo?.storeName !== CC_SHARED_STORE_NAME && 'change the config store link'}
+              {engineVersion && engineVersion.version !== CC_ENGINE_VERSION && 'replace this service\'s WASM binary'}
+              {engineVersion && engineVersion.version !== CC_ENGINE_VERSION && resourceLinkInfo && resourceLinkInfo.storeName !== CC_SHARED_STORE_NAME && ' and '}
+              {resourceLinkInfo && resourceLinkInfo.storeName !== CC_SHARED_STORE_NAME && 'change the config store link'}
               .
             </Text>
           </Alert>
@@ -2432,7 +2486,10 @@ function FastlyTab({
                   {engineVersionLoading ? (
                     <Loader size="xs" />
                   ) : engineUpdateProgress ? (
-                    <Text size="xs" style={{ fontFamily: 'monospace' }}>{engineUpdateProgress}</Text>
+                    <Flex align="center" gap={4}>
+                      <Loader size="xs" />
+                      <Text size="xs" style={{ fontFamily: 'monospace' }}>{engineUpdateProgress}</Text>
+                    </Flex>
                   ) : engineVersion?.version === CC_ENGINE_VERSION ? (
                     <Flex align="center" gap={4}>
                       <IconCheckCircleFilled width={14} height={14} style={{ color: 'var(--COLOR--success--text)' }} />
@@ -2458,7 +2515,7 @@ function FastlyTab({
                   <Flex align="center" gap="xs">
                     {engineVersion && (engineVersion.nodes_count ?? 0) > 0 ? (
                       <>
-                        <Text size="xs">{engineVersion.nodes_count} nodes · {engineVersion.edges_count} edges</Text>
+                        <Text size="xs">{engineVersion.nodes_count} node{engineVersion.nodes_count === 1 ? '' : 's'} · {engineVersion.edges_count} edge{engineVersion.edges_count === 1 ? '' : 's'}</Text>
                         <Text size="xs" className="cc-text-muted">({engineVersion.rules_hash?.slice(0, 8)})</Text>
                       </>
                     ) : (
@@ -2505,7 +2562,7 @@ function FastlyTab({
                 <Flex align="center" justify="space-between">
                   <Text size="xs" className="cc-text-muted">Canvas</Text>
                   <Flex align="center" gap="xs">
-                    <Text size="xs">{nodes.length} nodes · {edges.length} edges</Text>
+                    <Text size="xs">{nodes.length} node{nodes.length === 1 ? '' : 's'} · {edges.length} edge{edges.length === 1 ? '' : 's'}</Text>
                     {isGraphInSync ? (
                       <Badge size="xs" color="green" variant="light">synced</Badge>
                     ) : isGraphModified ? (
