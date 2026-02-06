@@ -30,17 +30,19 @@ RUN wasm-pack build --target web --out-dir pkg
 # ============================================================================
 FROM node:22-slim AS ui-builder
 
+ARG GITHUB_TOKEN
+
 WORKDIR /build
 
-# Copy package files first for better layer caching
-COPY editor-ui/package*.json ./editor-ui/
+# Copy package files and .npmrc for private @fastly packages
+COPY editor-ui/package*.json editor-ui/.npmrc ./editor-ui/
 
 # Copy the built WASM package from stage 1
 COPY --from=wasm-builder /build/core/pkg ./core/pkg/
 
-# Install dependencies
+# Install dependencies (token used via .npmrc, then removed)
 WORKDIR /build/editor-ui
-RUN npm ci --legacy-peer-deps
+RUN FASTLY_PACKAGES_GITHUB_TOKEN=${GITHUB_TOKEN} npm ci --legacy-peer-deps && rm -f .npmrc
 
 # Copy editor-ui source
 COPY editor-ui/ ./

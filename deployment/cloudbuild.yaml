@@ -10,6 +10,8 @@ steps:
       - build
       - -f
       - deployment/Dockerfile
+      - --build-arg
+      - GITHUB_TOKEN=${_GITHUB_TOKEN}
       - -t
       - us-central1-docker.pkg.dev/$PROJECT_ID/configure-compute/configure-compute-editor:$SHORT_SHA
       - -t
@@ -63,6 +65,7 @@ images:
 substitutions:
   _REGION: us-central1
   _CONFIG_PROFILE: production
+  _GITHUB_TOKEN: ""
 
 options:
   logging: CLOUD_LOGGING_ONLY

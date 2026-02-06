@@ -140,6 +140,7 @@ embed-wasm: rebuild
 PROJECT_ID ?= fastly-soc
 REGION ?= us-central1
 SHORT_SHA = $(shell git rev-parse --short=7 HEAD)
+GITHUB_TOKEN ?= $(FASTLY_PACKAGES_GITHUB_TOKEN)
 
 # Deploy to staging (default)
 deploy: deploy-staging
@@ -149,9 +150,10 @@ deploy-staging:
 	@echo "  Commit: $(SHORT_SHA)"
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
+	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
 	gcloud builds submit \
 		--config=deployment/cloudbuild.yaml \
-		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=staging,_REGION=$(REGION)" \
+		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=staging,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
 		--project=$(PROJECT_ID)
 
 deploy-production:
@@ -159,9 +161,10 @@ deploy-production:
 	@echo "  Commit: $(SHORT_SHA)"
 	@echo "  Project: $(PROJECT_ID)"
 	@echo ""
+	@test -n "$(GITHUB_TOKEN)" || (echo "Error: FASTLY_PACKAGES_GITHUB_TOKEN not set" && exit 1)
 	gcloud builds submit \
 		--config=deployment/cloudbuild.yaml \
-		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=production,_REGION=$(REGION)" \
+		--substitutions="SHORT_SHA=$(SHORT_SHA),_CONFIG_PROFILE=production,_REGION=$(REGION),_GITHUB_TOKEN=$(GITHUB_TOKEN)" \
 		--project=$(PROJECT_ID)
 
 # ============================================================================
