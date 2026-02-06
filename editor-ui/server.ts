@@ -45,8 +45,11 @@ app.all('/fastly-api/*', async (c) => {
     : await c.req.arrayBuffer()
 
   const resp = await fetch(url, { method: c.req.method, headers, body })
-  // Copy into mutable headers so downstream middleware can modify them
-  return new Response(resp.body, { status: resp.status, headers: new Headers(resp.headers) })
+  // Strip encoding/length so Hono's compress middleware can handle it cleanly
+  const respHeaders = new Headers(resp.headers)
+  respHeaders.delete('content-encoding')
+  respHeaders.delete('content-length')
+  return new Response(resp.body, { status: resp.status, headers: respHeaders })
 })
 
 // Edge proxy — CORS bypass for deployment verification
@@ -61,7 +64,10 @@ app.all('/edge-proxy/:domain{[^/]+}/*', async (c) => {
     headers: { Host: domain },
     signal: AbortSignal.timeout(10_000),
   })
-  return new Response(resp.body, { status: resp.status, headers: new Headers(resp.headers) })
+  const respHeaders = new Headers(resp.headers)
+  respHeaders.delete('content-encoding')
+  respHeaders.delete('content-length')
+  return new Response(resp.body, { status: resp.status, headers: respHeaders })
 })
 
 // Static files — hashed assets get immutable cache headers
