@@ -1,13 +1,57 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import wasm from 'vite-plugin-wasm'
+import { execSync } from 'child_process'
 
-export default defineConfig({
-  plugins: [react(), wasm()],
-  server: {
-    port: 5174
-  },
-  optimizeDeps: {
-    exclude: ['cc-core']
+/**
+ * Fetch the shared Fastly API token from GCP Secret Manager using local gcloud auth.
+ * This mirrors what nginx does in production (envsubst injects the token at startup).
+ */
+function getSharedToken(): string | null {
+  try {
+    return execSync(
+      'gcloud secrets versions access latest --secret=configure-compute-shared-fastly-token --project=fastly-soc',
+      { encoding: 'utf-8', timeout: 10000 }
+    ).trim()
+  } catch {
+    console.warn('[vite] Could not fetch shared Fastly token from Secret Manager. Personal token required.')
+    return null
+  }
+}
+
+export default defineConfig(({ command }) => {
+  // Only fetch token during dev serve, not during build
+  const sharedToken = command === 'serve' ? getSharedToken() : null
+  if (sharedToken) console.log('[vite] Shared Fastly token loaded from Secret Manager')
+
+  return {
+    plugins: [react(), wasm()],
+    // Expose whether the shared token was loaded (never expose the token itself)
+    define: {
+      '__SHARED_TOKEN_AVAILABLE__': JSON.stringify(!!sharedToken),
+    },
+    server: {
+      port: 5174,
+      proxy: {
+        // Mirror nginx's /fastly-api/ reverse proxy with conditional token injection
+        '/fastly-api': {
+          target: 'https://api.fastly.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/fastly-api/, ''),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              proxyReq.setHeader('Host', 'api.fastly.com')
+              // Mirror nginx map: inject shared token only when client doesn't send one
+              if (!req.headers['fastly-key'] && sharedToken) {
+                proxyReq.setHeader('Fastly-Key', sharedToken)
+              }
+            })
+          },
+        },
+      },
+    },
+    optimizeDeps: {
+      exclude: ['cc-core'],
+    },
   }
 })

@@ -118,11 +118,34 @@ Terminal node that routes requests to an origin.
 ## Development
 
 ### Editor UI
+
 ```bash
 cd editor-ui
 npm install
 npm run dev
 ```
+
+#### Fastly API Authentication
+
+The editor connects to the Fastly API via a proxy (`/fastly-api/`). Both local dev and production use the same proxy path — the token is injected server-side so it never reaches the browser.
+
+**Shared token (automatic):** On `npm run dev`, the Vite dev server fetches the shared Fastly API token from GCP Secret Manager using your local `gcloud` credentials. This requires:
+
+```bash
+# One-time setup: authenticate with GCP
+gcloud auth application-default login
+
+# Verify access to the secret
+gcloud secrets versions access latest \
+  --secret=configure-compute-shared-fastly-token \
+  --project=fastly-soc
+```
+
+If `gcloud` is not installed or you're not authenticated, the dev server starts normally but without the shared token — you'll need to enter your own.
+
+**Personal token (manual):** If the shared token isn't available (or you want to use a different Fastly account), use the "Use Your Own Token" option in the header dropdown. Create a token at [manage.fastly.com/account/personal/tokens](https://manage.fastly.com/account/personal/tokens).
+
+**Production:** The shared token is mounted from GCP Secret Manager via Cloud Run's `secretKeyRef`. nginx injects it into API requests automatically.
 
 ### Configure Compute
 ```bash

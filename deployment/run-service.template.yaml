@@ -34,6 +34,11 @@ spec:
           env:
             - name: ENVIRONMENT
               value: {{ENVIRONMENT}}
+            - name: FASTLY_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: configure-compute-shared-fastly-token
+                  key: latest
           startupProbe:
             httpGet:
               path: /health

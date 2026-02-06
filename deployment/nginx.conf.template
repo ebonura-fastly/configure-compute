@@ -31,6 +31,12 @@ http {
     uwsgi_temp_path /tmp/uwsgi_temp;
     scgi_temp_path /tmp/scgi_temp;
 
+    # Resolve Fastly-Key: use client header if present, else server-side shared token
+    map $http_fastly_key $resolved_fastly_key {
+        default     $http_fastly_key;
+        ""          "${FASTLY_API_TOKEN}";
+    }
+
     server {
         listen 8080;
         server_name _;
@@ -64,6 +70,7 @@ http {
             proxy_set_header Host api.fastly.com;
             proxy_set_header Accept-Encoding "";
             proxy_pass_request_headers on;
+            proxy_set_header Fastly-Key $resolved_fastly_key;
             proxy_read_timeout 60s;
             client_max_body_size 50m;
         }

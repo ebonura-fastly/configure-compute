@@ -23,8 +23,9 @@ import {
   Tooltip,
   Loader,
 } from '@fastly/beacon-mantine'
-import { IconClose, IconSearch, IconFilter, IconLink, IconUnlink, IconCode, IconSwap, IconSync, IconCopy, IconUpload, IconAttentionFilled, IconCheckCircleFilled, IconDownload } from '@fastly/beacon-icons'
+import { IconClose, IconSearch, IconFilter, IconLink, IconSync, IconCopy, IconUpload, IconAttentionFilled, IconCheckCircleFilled, IconDownload } from '@fastly/beacon-icons'
 import { allTemplates, instantiateTemplate, type RuleTemplate } from '../templates'
+import { useFastlyConnection } from '../hooks/useFastlyConnection'
 
 type SidebarProps = {
   nodes: Node[]
@@ -34,6 +35,7 @@ type SidebarProps = {
   onLoadRules?: (nodes: Node[], edges: Edge[]) => void
   routeServiceId?: string
   isLocalRoute?: boolean
+  isPersonalRoute?: boolean
   onNavigate?: (path: string) => void
 }
 
@@ -112,7 +114,7 @@ const categoryLabels: Record<string, string> = {
   routing: 'Routing',
 }
 
-export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRules, routeServiceId, isLocalRoute, onNavigate }: SidebarProps) {
+export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRules, routeServiceId, isLocalRoute, isPersonalRoute, onNavigate }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>('fastly')
 
   // Templates state
@@ -123,6 +125,7 @@ export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRul
   const stored = loadStoredSettings()
   const [fastlyState, setFastlyState] = useState<FastlyState>({
     apiToken: stored.apiToken,
+    useSharedAccount: false,
     isConnected: false,
     services: [] as FastlyService[],
     configStores: [] as ConfigStore[],
@@ -245,6 +248,7 @@ export function Sidebar({ nodes, edges, canonicalGraph, onAddTemplate, onLoadRul
             setFastlyTabState={setFastlyTabState}
             routeServiceId={routeServiceId}
             isLocalRoute={isLocalRoute}
+            isPersonalRoute={isPersonalRoute}
             onNavigate={onNavigate}
           />
         )}
@@ -508,7 +512,7 @@ type CcPayload = {
 }
 
 const CC_ENGINE_VERSION = '0.1.8'
-const FASTLY_API_BASE = import.meta.env.DEV ? 'https://api.fastly.com' : '/fastly-api'
+const FASTLY_API_BASE = '/fastly-api'
 const STORAGE_KEY = 'cc-fastly'
 const CC_SHARED_STORE_NAME = 'cc_shared_rules'
 
@@ -629,6 +633,7 @@ type DeployStatus = 'idle' | 'deploying' | 'verifying' | 'verified' | 'timeout' 
 
 type FastlyState = {
   apiToken: string
+  useSharedAccount: boolean
   isConnected: boolean
   services: FastlyService[]
   configStores: ConfigStore[]
@@ -678,6 +683,7 @@ function FastlyTab({
   setFastlyTabState,
   routeServiceId,
   isLocalRoute,
+  isPersonalRoute,
   onNavigate,
 }: {
   nodes: Node[]
@@ -692,9 +698,10 @@ function FastlyTab({
   setFastlyTabState: React.Dispatch<React.SetStateAction<FastlyTabState>>
   routeServiceId?: string
   isLocalRoute?: boolean
+  isPersonalRoute?: boolean
   onNavigate?: (path: string) => void
 }) {
-  const { apiToken, isConnected, services, configStores, selectedService, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
+  const { apiToken, useSharedAccount, isConnected, services, configStores, selectedService, sharedStoreId, engineVersion, engineVersionLoading, serviceDomain } = fastlyState
   const { localMode, localServerAvailable, localComputeRunning, localEngineVersion, hasLoadedRules } = localModeState
   const {
     loading, error, status, showCreateForm, createForm, createProgress,
@@ -735,6 +742,12 @@ function FastlyTab({
   const setServiceDomain = (domain: string | null) => {
     setFastlyState(prev => ({ ...prev, serviceDomain: domain }))
   }
+
+  // Connection context — shares state with CCHeader badge
+  const connection = useFastlyConnection()
+
+  // Track whether user requested personal token input (from header dropdown)
+  const [showPersonalTokenInput, setShowPersonalTokenInput] = useState(false)
 
   // Compute current graph hash when canonical graph changes
   // Uses canonicalGraph which already has React Flow internal fields stripped
@@ -790,7 +803,7 @@ function FastlyTab({
   // Refresh resource link info when service changes
   useEffect(() => {
     const refreshLinkInfo = async () => {
-      if (!selectedService || !isConnected || !apiToken) {
+      if (!selectedService || !isConnected || (!apiToken && !useSharedAccount)) {
         setResourceLinkInfo(null)
         return
       }
@@ -819,27 +832,91 @@ function FastlyTab({
     }
 
     refreshLinkInfo()
-  }, [selectedService, isConnected, apiToken, configStores])
+  }, [selectedService, isConnected, apiToken, useSharedAccount, configStores])
 
-  // Navigate when service selection changes (user-initiated)
+  // Auto-connect with shared account (both dev and production)
+  const hasAutoConnected = useRef(false)
+  useEffect(() => {
+    if (!isConnected && !hasAutoConnected.current && !localMode && !isPersonalRoute) {
+      hasAutoConnected.current = true
+      connectToFastly('shared')
+    } else if (!isConnected && !hasAutoConnected.current && isPersonalRoute) {
+      hasAutoConnected.current = true
+      // On /auth or /personal routes, set personal mode
+      connection.setConnectionInfo({ mode: 'personal', isConnected: false, customerName: null, isConnecting: false })
+      setShowPersonalTokenInput(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle mode switch requests from header dropdown
+  // Mode switches preserve auth state (e.g. personal token stays saved).
+  // Only explicit disconnect clears everything.
+  useEffect(() => {
+    if (!connection.pendingRequest) return
+    const request = connection.pendingRequest
+    connection.clearPendingRequest()
+
+    if (request === 'personal') {
+      updateLocalModeState({ localMode: false })
+      updateFastlyState({ isConnected: false, useSharedAccount: false })
+      if (apiToken) {
+        // Token already saved — reconnect immediately
+        setShowPersonalTokenInput(false)
+        navigateToPersonal()
+        connection.setConnectionInfo({ mode: 'personal', isConnected: false, customerName: null, isConnecting: true })
+        connectToFastly('personal')
+      } else {
+        // No token saved — show auth page
+        setShowPersonalTokenInput(true)
+        navigateToAuth()
+        connection.setConnectionInfo({ mode: 'personal', isConnected: false, customerName: null, isConnecting: false })
+      }
+    } else if (request === 'shared') {
+      updateLocalModeState({ localMode: false })
+      updateFastlyState({ isConnected: false, useSharedAccount: false })
+      setShowPersonalTokenInput(false)
+      navigateToHome()
+      connection.setConnectionInfo({ mode: 'shared', isConnected: false, customerName: null, isConnecting: true })
+      connectToFastly('shared')
+    } else if (request === 'local') {
+      updateFastlyState({ isConnected: false, useSharedAccount: false })
+      setShowPersonalTokenInput(false)
+      connection.setConnectionInfo({ mode: 'local', isConnected: false, customerName: null, isConnecting: true })
+      checkLocalEnvironment()
+    } else if (request === 'disconnect') {
+      // Explicit disconnect — clear token and all state
+      handleDisconnect()
+      navigateToAuth()
+      connection.setConnectionInfo({ mode: 'personal', isConnected: false, customerName: null, isConnecting: false })
+      setShowPersonalTokenInput(true)
+    }
+  }, [connection.pendingRequest]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Navigate based on mode and service selection
   const navigateToService = useCallback((serviceId: string) => {
-    if (onNavigate && serviceId) {
+    if (!onNavigate || !serviceId) return
+    // Personal mode uses /personal/:serviceId, shared uses /:serviceId
+    if (connection.mode === 'personal') {
+      onNavigate(`/personal/${serviceId}`)
+    } else {
       onNavigate(`/${serviceId}`)
     }
-  }, [onNavigate])
+  }, [onNavigate, connection.mode])
 
-  // Navigate to local mode
   const navigateToLocal = useCallback(() => {
-    if (onNavigate) {
-      onNavigate('/local')
-    }
+    if (onNavigate) onNavigate('/local')
   }, [onNavigate])
 
-  // Navigate to home (disconnected)
   const navigateToHome = useCallback(() => {
-    if (onNavigate) {
-      onNavigate('/')
-    }
+    if (onNavigate) onNavigate('/')
+  }, [onNavigate])
+
+  const navigateToAuth = useCallback(() => {
+    if (onNavigate) onNavigate('/auth')
+  }, [onNavigate])
+
+  const navigateToPersonal = useCallback(() => {
+    if (onNavigate) onNavigate('/personal')
   }, [onNavigate])
 
   const LOCAL_API_URL = 'http://localhost:3001/local-api'
@@ -879,7 +956,7 @@ function FastlyTab({
                 const graphData = JSON.parse(decompressed)
                 if (graphData.nodes && graphData.edges) {
                   onLoadRules(graphData.nodes, graphData.edges)
-                  setStatus(`Local mode: Loaded ${graphData.nodes.length} nodes`)
+                  // Status shown via service selection, not a separate message
                   updateLocalModeState({ hasLoadedRules: true })
                 }
               }
@@ -890,13 +967,14 @@ function FastlyTab({
         }
 
         updateLocalModeState({ localMode: true })
-        setStatus('Local development mode active')
+        connection.setConnectionInfo({ mode: 'local', isConnected: false, customerName: null, isConnecting: false })
         navigateToLocal()
         return true
       }
     } catch {
       // Local server not running - show error to user
       setError('Local API server not found. Run "make local" to start the full local environment (UI + API + Compute).')
+      connection.setConnectionInfo({ mode: 'local', isConnected: false, customerName: null, isConnecting: false })
     }
     return false
   }, [onLoadRules, hasLoadedRules, updateLocalModeState, navigateToLocal])
@@ -962,18 +1040,18 @@ function FastlyTab({
             localComputeRunning: true,
             localEngineVersion: { engine: data.engine, version: data.version, format: data.format },
           })
-          setStatus('Local Compute server running')
+          // Status shown in header badge
         } else {
           updateLocalModeState({ localComputeRunning: false, localEngineVersion: null })
-          setStatus('Local Compute server not running')
+          setError('Local Compute server not running. Run "make local" to start it.')
         }
       } else {
         updateLocalModeState({ localComputeRunning: false, localEngineVersion: null })
-        setStatus('Local API server error')
+        setError('Local API server error')
       }
     } catch {
       updateLocalModeState({ localComputeRunning: false, localEngineVersion: null })
-      setStatus('Local API server not available')
+      setError('Local API server not available')
     } finally {
       setLoading(false)
     }
@@ -983,13 +1061,25 @@ function FastlyTab({
     setFastlyState(prev => ({ ...prev, ...updates }))
   }
 
+  // Build Fastly API headers: include Fastly-Key only when using personal token.
+  // When using shared account, omit it — nginx injects the server-side token.
+  const getFastlyHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
+    const headers: Record<string, string> = {}
+    if (apiToken && !useSharedAccount) {
+      headers['Fastly-Key'] = apiToken
+    }
+    if (extra) Object.assign(headers, extra)
+    return headers
+  }, [apiToken, useSharedAccount])
+
   const fastlyFetch = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const response = await fetch(`${FASTLY_API_BASE}${endpoint}`, {
       ...options,
       headers: {
-        'Fastly-Key': apiToken,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        ...getFastlyHeaders({
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }),
         ...options.headers,
       },
     })
@@ -998,7 +1088,7 @@ function FastlyTab({
       throw new Error(`Fastly API error: ${response.status} - ${text}`)
     }
     return response.json()
-  }, [apiToken])
+  }, [getFastlyHeaders])
 
   const fetchEngineVersion = useCallback(async (serviceName: string, serviceId?: string, version?: number) => {
     setEngineVersionLoading(true)
@@ -1101,7 +1191,7 @@ function FastlyTab({
 
       const uploadResponse = await fetch(`${FASTLY_API_BASE}/service/${service.id}/version/${newVersionNumber}/package`, {
         method: 'PUT',
-        headers: { 'Fastly-Key': apiToken },
+        headers: getFastlyHeaders(),
         body: formData,
       })
 
@@ -1181,8 +1271,10 @@ function FastlyTab({
     }
   }
 
-  const handleConnect = async () => {
-    if (!apiToken) {
+  const connectToFastly = async (mode: 'shared' | 'personal') => {
+    const isShared = mode === 'shared'
+
+    if (!isShared && !apiToken) {
       setError('Please enter an API token')
       return
     }
@@ -1191,7 +1283,21 @@ function FastlyTab({
     setError(null)
 
     try {
-      const servicesData = await fastlyFetch('/service')
+      // For the first call, build headers directly to avoid stale closure issues
+      const connectHeaders: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+      if (!isShared && apiToken) {
+        connectHeaders['Fastly-Key'] = apiToken
+      }
+
+      const servicesResponse = await fetch(`${FASTLY_API_BASE}/service`, { headers: connectHeaders })
+      if (!servicesResponse.ok) {
+        const text = await servicesResponse.text()
+        throw new Error(`Fastly API error: ${servicesResponse.status} - ${text}`)
+      }
+      const servicesData = await servicesResponse.json()
       const computeServices: FastlyService[] = servicesData
         .filter((s: any) => s.type === 'wasm')
         .map((s: any) => ({
@@ -1201,7 +1307,12 @@ function FastlyTab({
           version: s.versions?.[s.versions.length - 1]?.number || 1,
         }))
 
-      const storesData = await fastlyFetch('/resources/stores/config')
+      const storesResponse = await fetch(`${FASTLY_API_BASE}/resources/stores/config`, { headers: connectHeaders })
+      if (!storesResponse.ok) {
+        const text = await storesResponse.text()
+        throw new Error(`Fastly API error: ${storesResponse.status} - ${text}`)
+      }
+      const storesData = await storesResponse.json()
       const storesArray = Array.isArray(storesData) ? storesData : (storesData.data || [])
       const stores: ConfigStore[] = storesArray.map((s: any) => ({
         id: s.id,
@@ -1217,7 +1328,7 @@ function FastlyTab({
         foundSharedStoreId = sharedStore.id
         try {
           const itemsResponse = await fetch(`${FASTLY_API_BASE}/resources/stores/config/${sharedStore.id}/items?limit=100`, {
-            headers: { 'Fastly-Key': apiToken, 'Accept': 'application/json' },
+            headers: { ...connectHeaders, 'Accept': 'application/json' },
           })
 
           if (itemsResponse.ok) {
@@ -1278,6 +1389,7 @@ function FastlyTab({
       }
 
       updateFastlyState({
+        useSharedAccount: isShared,
         services: computeServices,
         configStores: stores,
         isConnected: true,
@@ -1285,8 +1397,24 @@ function FastlyTab({
         selectedConfigStore: storeToSelect,
         sharedStoreId: foundSharedStoreId,
       })
-      setStatus('Connected to Fastly')
-      saveSettings({ apiToken, selectedService: serviceToSelect, selectedConfigStore: storeToSelect })
+      // Connection status now shown in header badge
+      saveSettings({ apiToken: isShared ? '' : apiToken, selectedService: serviceToSelect, selectedConfigStore: storeToSelect })
+
+      // Fetch customer name for the header badge
+      let customerName: string | null = null
+      try {
+        const customerResponse = await fetch(`${FASTLY_API_BASE}/current_customer`, { headers: connectHeaders })
+        if (customerResponse.ok) {
+          const customerData = await customerResponse.json()
+          customerName = customerData.name || null
+        }
+      } catch { /* non-critical */ }
+      connection.setConnectionInfo({
+        mode: isShared ? 'shared' : 'personal',
+        isConnected: true,
+        customerName,
+        isConnecting: false,
+      })
 
       // Always fetch engine version if we have a selected service
       const serviceName = computeServices.find(s => s.id === serviceToSelect)?.name || ''
@@ -1322,12 +1450,20 @@ function FastlyTab({
         navigateToService(serviceToSelect)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed')
-      updateFastlyState({ isConnected: false })
+      if (isShared) {
+        setError('Shared account connection failed. Try using your own API token.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Connection failed')
+      }
+      updateFastlyState({ isConnected: false, useSharedAccount: false })
+      connection.setConnectionInfo({ mode: 'disconnected', isConnected: false, customerName: null, isConnecting: false })
     } finally {
       setLoading(false)
     }
   }
+
+  const handleConnect = () => connectToFastly('personal')
+  const handleConnectShared = () => connectToFastly('shared')
 
   const loadRulesFromStore = async (storeId: string, serviceId: string, serviceName: string) => {
     if (!onLoadRules) return
@@ -1337,7 +1473,7 @@ function FastlyTab({
       const url = `${FASTLY_API_BASE}/resources/stores/config/${storeId}/item/${encodeURIComponent(serviceId)}`
       console.log('[Load] Fetching from:', url)
       const response = await fetch(url, {
-        headers: { 'Fastly-Key': apiToken, 'Accept': 'application/json' },
+        headers: getFastlyHeaders({ 'Accept': 'application/json' }),
       })
       console.log('[Load] Response status:', response.status)
 
@@ -1383,6 +1519,7 @@ function FastlyTab({
   const handleDisconnect = () => {
     updateFastlyState({
       apiToken: '',
+      useSharedAccount: false,
       isConnected: false,
       services: [],
       configStores: [],
@@ -1393,6 +1530,7 @@ function FastlyTab({
     })
     setStatus(null)
     saveSettings({ apiToken: '', selectedService: '', selectedConfigStore: '' })
+    connection.setConnectionInfo({ mode: 'disconnected', isConnected: false, customerName: null, isConnecting: false })
     // Clear the canvas
     if (onLoadRules) {
       onLoadRules([], [])
@@ -1514,7 +1652,7 @@ function FastlyTab({
       // Key is just the service ID
       await fetch(`${FASTLY_API_BASE}/resources/stores/config/${configStoreId}/item/${encodeURIComponent(service.id)}`, {
         method: 'PUT',
-        headers: { 'Fastly-Key': apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: getFastlyHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
         body: payloadFormData.toString(),
       })
 
@@ -1602,7 +1740,7 @@ function FastlyTab({
 
       await fetch(`${FASTLY_API_BASE}/service/${serviceId}/version/${serviceVersion}/package`, {
         method: 'PUT',
-        headers: { 'Fastly-Key': apiToken },
+        headers: getFastlyHeaders(),
         body: formData,
       }).then(async (res) => {
         if (!res.ok) {
@@ -1627,7 +1765,7 @@ function FastlyTab({
       // Key is just the service ID
       await fetch(`${FASTLY_API_BASE}/resources/stores/config/${configStoreId}/item/${encodeURIComponent(serviceId)}`, {
         method: 'PUT',
-        headers: { 'Fastly-Key': apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: getFastlyHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
         body: payloadFormData.toString(),
       }).then(async (res) => {
         if (!res.ok) {
@@ -1808,7 +1946,7 @@ function FastlyTab({
       // Key is just the service ID
       const response = await fetch(`${FASTLY_API_BASE}/resources/stores/config/${sharedStoreId}/item/${encodeURIComponent(selectedService)}`, {
         method: 'PUT',
-        headers: { 'Fastly-Key': apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: getFastlyHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
         body: payloadFormData.toString(),
       })
       if (!response.ok) {
@@ -1909,22 +2047,6 @@ function FastlyTab({
   if (localMode && localServerAvailable) {
     return (
       <Box p="md">
-        {/* Local Mode Banner */}
-        <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <Pill variant="action">Local Dev Mode</Pill>
-          <Button
-            variant="outline"
-            size="sm"
-            leftSection={<IconSwap width={14} height={14} />}
-            onClick={() => {
-              updateLocalModeState({ localMode: false, localServerAvailable: false })
-              navigateToHome()
-            }}
-          >
-            Switch to Fastly
-          </Button>
-        </Flex>
-
         {/* Local Server Card */}
         <Box mb="md">
           <Card withBorder radius="md" padding={0}>
@@ -2051,12 +2173,62 @@ function FastlyTab({
 
   // Show connection UI if not connected to Fastly
   if (!isConnected) {
+    // Auto-connecting with shared token — show loading state
+    if (loading && !error && !showPersonalTokenInput) {
+      return (
+        <Box p="md">
+          <Flex align="center" gap="sm">
+            <Loader size="xs" />
+            <Text size="sm" className="cc-text-muted">Connecting to Fastly...</Text>
+          </Flex>
+        </Box>
+      )
+    }
+
+    // Auto-connect failed or user requested personal token input
     return (
       <Box p="md">
-        {/* Connect to Fastly section */}
-        <Text size="sm" className="cc-text-muted" style={{ marginBottom: '12px' }}>
-          Connect to Fastly to deploy rules to the edge.
-        </Text>
+        {error && (
+          <Box mb="md">
+            <Alert variant="error" icon={<IconAttentionFilled width={16} height={16} />}>{error}</Alert>
+          </Box>
+        )}
+
+        {!showPersonalTokenInput && (
+          <>
+            {__SHARED_TOKEN_AVAILABLE__ ? (
+              <Button
+                variant="filled"
+                onClick={handleConnectShared}
+                loading={loading}
+                leftSection={<IconSync width={16} height={16} />}
+                style={{ width: '100%', marginBottom: '12px' }}
+              >
+                Retry Connection
+              </Button>
+            ) : (
+              <Alert variant="caution" icon={<IconAttentionFilled width={16} height={16} />} style={{ marginBottom: '12px' }}>
+                <Text size="xs">
+                  Shared Fastly token not available. Run{' '}
+                  <code style={{ fontSize: '0.85em' }}>gcloud auth application-default login</code>{' '}
+                  to enable it, or enter your own API token below.
+                </Text>
+              </Alert>
+            )}
+
+            <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
+              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
+              <Text size="xs" className="cc-text-muted">{__SHARED_TOKEN_AVAILABLE__ ? 'OR USE YOUR OWN TOKEN' : 'ENTER YOUR TOKEN'}</Text>
+              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
+            </Flex>
+          </>
+        )}
+
+        {showPersonalTokenInput && (
+          <Text size="sm" className="cc-text-muted" style={{ marginBottom: '12px' }}>
+            Enter your Fastly API token to connect with your own account.
+          </Text>
+        )}
 
         <Box mb="md">
           <TextInput
@@ -2082,29 +2254,8 @@ function FastlyTab({
           leftSection={<IconLink width={16} height={16} />}
           style={{ width: '100%' }}
         >
-          Connect to Fastly
+          Connect with Your Token
         </Button>
-
-        {error && (
-          <Box mt="md">
-            <Alert variant="error" icon={<IconAttentionFilled width={16} height={16} />}>{error}</Alert>
-          </Box>
-        )}
-
-        {import.meta.env.DEV && (
-          <>
-            <Flex style={{ alignItems: 'center', gap: '12px', margin: '16px 0' }}>
-              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
-              <Text size="xs" className="cc-text-muted">OR</Text>
-              <Box style={{ flex: 1, height: '1px', background: 'var(--COLOR--border--primary)' }} />
-            </Flex>
-
-            {/* Local Dev Mode button - only shown in local development */}
-            <Button variant="outline" onClick={checkLocalEnvironment} leftSection={<IconCode width={16} height={16} />} style={{ width: '100%' }}>
-              Use Local Dev Mode
-            </Button>
-          </>
-        )}
       </Box>
     )
   }
@@ -2112,14 +2263,6 @@ function FastlyTab({
   // Connected to Fastly - show full UI
   return (
     <Box p="md">
-      {/* Connection status row */}
-      <Flex style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <Pill variant="success">Connected</Pill>
-        <Button variant="outline" size="sm" leftSection={<IconUnlink width={14} height={14} />} onClick={handleDisconnect}>
-          Disconnect
-        </Button>
-      </Flex>
-
       {/* Create New Service Form */}
       {showCreateForm ? (
         <Box mb="md">

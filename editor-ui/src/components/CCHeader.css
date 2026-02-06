@@ -107,6 +107,54 @@
   box-shadow: 0 0 0 2px var(--COLOR--action--focus);
 }
 
+/* Connection badge in top-right */
+.cc-topnav-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-right: 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: default;
+  color: var(--COLOR--text--secondary);
+  font-family: inherit;
+}
+
+.cc-topnav-badge--connected,
+.cc-topnav-badge--local,
+.cc-topnav-badge--disconnected {
+  cursor: pointer;
+  background: var(--COLOR--surface--secondary);
+  transition: background 130ms ease-in-out;
+}
+
+.cc-topnav-badge--connected:hover,
+.cc-topnav-badge--local:hover,
+.cc-topnav-badge--disconnected:hover {
+  background: var(--COLOR--surface--primary--hover);
+}
+
+.cc-topnav-badge--connected:focus,
+.cc-topnav-badge--local:focus,
+.cc-topnav-badge--disconnected:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--COLOR--action--focus);
+}
+
+.cc-topnav-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--COLOR--status--success, #22c55e);
+  flex-shrink: 0;
+}
+
+.cc-topnav-badge-dot--inactive {
+  background: var(--COLOR--text--tertiary, #9ca3af);
+}
+
 /* ========================================
  * Mobile Responsive (< 768px)
  * ======================================== */

@@ -27,6 +27,7 @@ import { DeletableEdge } from './components/edges'
 import { Sidebar } from './components/Sidebar'
 import { CCHeader } from './components/CCHeader'
 import { toCanonicalGraph } from './types/graph'
+import { FastlyConnectionProvider } from './hooks/useFastlyConnection'
 
 const nodeTypes: NodeTypes = {
   request: RequestNode,
@@ -85,7 +86,9 @@ function Flow() {
   // Router hooks
   const { serviceId } = useParams<{ serviceId?: string }>()
   const navigate = useNavigate()
-  const isLocalMode = window.location.pathname === '/local'
+  const pathname = window.location.pathname
+  const isLocalMode = pathname === '/local'
+  const isPersonalRoute = pathname === '/auth' || pathname.startsWith('/personal')
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -182,6 +185,7 @@ function Flow() {
           onLoadRules={handleLoadRules}
           routeServiceId={serviceId}
           isLocalRoute={isLocalMode}
+          isPersonalRoute={isPersonalRoute}
           onNavigate={navigate}
         />
         <div className="cc-canvas" ref={reactFlowWrapper}>
@@ -253,9 +257,11 @@ function Flow() {
 function AppRoutes() {
   return (
     <div className="cc-app">
-      <ReactFlowProvider>
-        <Flow />
-      </ReactFlowProvider>
+      <FastlyConnectionProvider>
+        <ReactFlowProvider>
+          <Flow />
+        </ReactFlowProvider>
+      </FastlyConnectionProvider>
     </div>
   )
 }
@@ -265,6 +271,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AppRoutes />} />
+        <Route path="/auth" element={<AppRoutes />} />
+        <Route path="/personal" element={<AppRoutes />} />
+        <Route path="/personal/:serviceId" element={<AppRoutes />} />
         <Route path="/local" element={<AppRoutes />} />
         <Route path="/:serviceId" element={<AppRoutes />} />
       </Routes>

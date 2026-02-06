@@ -55,8 +55,8 @@ RUN npm run build
 # ============================================================================
 FROM nginx:alpine AS production
 
-# Copy custom nginx config
-COPY deployment/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx config template (envsubst injects FASTLY_API_TOKEN at startup)
+COPY deployment/nginx.conf.template /etc/nginx/nginx.conf.template
 
 # Copy built static files
 COPY --from=ui-builder /build/editor-ui/dist /usr/share/nginx/html
@@ -64,5 +64,6 @@ COPY --from=ui-builder /build/editor-ui/dist /usr/share/nginx/html
 # Cloud Run uses port 8080
 EXPOSE 8080
 
-# nginx runs as non-root by default in alpine
-CMD ["nginx", "-g", "daemon off;"]
+# At startup: inject FASTLY_API_TOKEN into nginx config, then start nginx.
+# Restricted variable list ensures nginx's own $variables are untouched.
+CMD ["/bin/sh", "-c", "envsubst '${FASTLY_API_TOKEN}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
